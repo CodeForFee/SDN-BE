@@ -22,6 +22,7 @@ const customerRoutes = require("./routes/customerRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const inventoryRoutes = require("./routes/inventoryRoutes");
 const reportRoutes = require("./routes/reportRoutes");
+const bookingRoutes = require("./routes/bookingRoutes");
 
 // Use Routes
 app.use("/api/auth", authRoutes);
@@ -32,6 +33,7 @@ app.use("/api/customers", customerRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/inventory", inventoryRoutes);
 app.use("/api/reports", reportRoutes);
+app.use("/api/bookings", bookingRoutes);
 
 // Start Server
 const PORT = process.env.PORT || 5000;
