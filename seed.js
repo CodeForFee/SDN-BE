@@ -1,58 +1,164 @@
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
-const User = require("./model/User");
-const Dealer = require("./model/Dealer");
-const Vehicle = require("./model/Vehicle");
-const Customer = require("./model/Customer");
 
 dotenv.config();
 
+const User = require("./model/User");
+const Customer = require("./model/Customer");
+const Dealer = require("./model/Dealer");
+const Vehicle = require("./model/Vehicle");
+const Order = require("./model/Order");
+const Inventory = require("./model/Inventory");
+const Promotion = require("./model/Promotion");
+const Booking = require("./model/Booking");
+
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => console.log("✅ MongoDB connected for seeding"))
+  .catch((err) => console.error("❌ MongoDB connection error:", err));
+
 const seed = async () => {
   try {
-    await mongoose.connect(process.env.MONGO_URI);
-    console.log("✅ MongoDB connected (seeding)");
-
-    // Xóa data cũ
+    // Clear old data
     await User.deleteMany();
+    await Customer.deleteMany();
     await Dealer.deleteMany();
     await Vehicle.deleteMany();
-    await Customer.deleteMany();
+    await Order.deleteMany();
+    await Inventory.deleteMany();
+    await Promotion.deleteMany();
+    await Booking.deleteMany();
 
-    // Tạo 1 admin
-    const admin = await User.create({
-      name: "System Admin",
-      email: "admin@example.com",
-      password: "123456",
-      role: "Admin"
-    });
+    console.log("🧹 Old data cleared");
 
-    // Tạo 1 dealer
-    const dealer = await Dealer.create({
-      name: "Hanoi EV Dealer",
-      location: "Hà Nội",
-      contactInfo: "0123456789",
-      salesTarget: 100
-    });
-
-    // Tạo vài vehicle
-    const vehicles = await Vehicle.insertMany([
-      { model: "EV A1", version: "Standard", color: "Red", price: 25000, features: ["ABS", "Bluetooth"] },
-      { model: "EV B2", version: "Premium", color: "Blue", price: 32000, features: ["GPS", "Heated Seats"] }
+    // Seed Users
+    const users = await User.insertMany([
+      {
+        name: "System Admin",
+        email: "admin@evms.com",
+        password: "123456",
+        role: "Admin",
+      },
+      {
+        name: "Dealer Manager",
+        email: "dealer.manager@evms.com",
+        password: "123456",
+        role: "DealerManager",
+      },
+      {
+        name: "Dealer Staff",
+        email: "dealer.staff@evms.com",
+        password: "123456",
+        role: "DealerStaff",
+      },
+      {
+        name: "EVM Staff",
+        email: "evm.staff@evms.com",
+        password: "123456",
+        role: "EVMStaff",
+      },
     ]);
 
-    // Tạo 1 customer
-    const customer = await Customer.create({
-      name: "Nguyen Van A",
-      phone: "0909999999",
-      email: "vana@gmail.com",
-      address: "Hà Nội"
-    });
+    // Seed Customers
+    const customers = await Customer.insertMany([
+      { name: "Nguyen Van A", email: "a@gmail.com", phone: "0901234567", address: "Hanoi" },
+      { name: "Tran Thi B", email: "b@gmail.com", phone: "0902345678", address: "HCM" },
+    ]);
 
-    console.log("🌱 Seed completed");
-    console.log({ admin, dealer, vehicles, customer });
+    // Seed Dealers
+    const dealers = await Dealer.insertMany([
+      {
+        name: "Hanoi EV Dealer",
+        location: "Hanoi",
+        manager: users[1]._id,
+        staff: [users[2]._id],
+      },
+      {
+        name: "HCM EV Dealer",
+        location: "Ho Chi Minh",
+        manager: users[1]._id,
+        staff: [users[2]._id],
+      },
+    ]);
+
+    // Seed Vehicles
+    const vehicles = await Vehicle.insertMany([
+      {
+        brand: "VinFast",
+        model: "VF8",
+        year: 2024,
+        price: 60000,
+        features: ["Electric", "Autopilot", "AI Assistant"],
+        stock: 10,
+      },
+      {
+        brand: "Tesla",
+        model: "Model 3",
+        year: 2025,
+        price: 55000,
+        features: ["Electric", "Autopilot"],
+        stock: 8,
+      },
+    ]);
+
+    // Seed Orders
+    const orders = await Order.insertMany([
+      {
+        customer: customers[0]._id,
+        vehicle: vehicles[0]._id,
+        dealer: dealers[0]._id,
+        totalPrice: 60000,
+        status: "Confirmed",
+        paymentMethod: "Cash",
+      },
+      {
+        customer: customers[1]._id,
+        vehicle: vehicles[1]._id,
+        dealer: dealers[1]._id,
+        totalPrice: 55000,
+        status: "Pending",
+        paymentMethod: "Installment",
+      },
+    ]);
+
+    // Seed Inventory
+    await Inventory.insertMany([
+      { dealer: dealers[0]._id, vehicle: vehicles[0]._id, quantity: 5 },
+      { dealer: dealers[1]._id, vehicle: vehicles[1]._id, quantity: 3 },
+    ]);
+
+    // Seed Promotions
+    const promotions = await Promotion.insertMany([
+      {
+        title: "New Year Discount",
+        description: "10% off for all vehicles",
+        discountPercent: 10,
+        validFrom: new Date(),
+        validTo: new Date(new Date().setMonth(new Date().getMonth() + 1)),
+        vehicles: [vehicles[0]._id, vehicles[1]._id],
+      },
+    ]);
+
+    // Seed Bookings
+    await Booking.insertMany([
+      {
+        customer: customers[0]._id,
+        vehicle: vehicles[0]._id,
+        testDriveDate: new Date(),
+        status: "Scheduled",
+      },
+      {
+        customer: customers[1]._id,
+        vehicle: vehicles[1]._id,
+        testDriveDate: new Date(),
+        status: "Completed",
+      },
+    ]);
+
+    console.log("✅ Seeding completed!");
     process.exit();
   } catch (err) {
-    console.error(err);
+    console.error("❌ Seeding error:", err);
     process.exit(1);
   }
 };
