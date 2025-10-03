@@ -10,18 +10,18 @@ const {
 const { protect } = require("../middleware/authMiddleware");
 
 // Tạo lịch hẹn lái thử (Dealer Staff, Dealer Manager)
-// router.post("/", protect, createBooking);
+router.post("/", protect, createBooking);
 
 // Lấy tất cả lịch hẹn (Admin, EVM Staff, Dealer Manager)
-// router.get("/", protect, getBookings);
+router.get("/", protect, getBookings);
 
 // Lấy 1 lịch hẹn
-// router.get("/:id", protect, getBookingById);
+router.get("/:id", protect, getBookingById);
 
 // Cập nhật lịch hẹn
-// router.put("/:id", protect, updateBooking);
+router.put("/:id", protect, updateBooking);
 
 // Xóa lịch hẹn
-// router.delete("/:id", protect, deleteBooking);
+router.delete("/:id", protect, deleteBooking);
 
 module.exports = router;
