@@ -24,7 +24,7 @@ app.use(cors({
 }));
 
 // Additional CORS handling for preflight requests
-app.options('*', cors());
+// app.options('/*', cors()); // Removed due to Express 5.x compatibility
 
 // Manual CORS headers for all requests (backup)
 app.use((req, res, next) => {
