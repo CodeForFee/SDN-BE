@@ -13,13 +13,33 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// CORS - Allow all origins
+// CORS - Allow all origins with preflight handling
 app.use(cors({
-  origin: '*', // Allow all origins
+  origin: true, // Allow all origins
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization', 'Cache-Control'],
-  credentials: false // Set to false when origin is '*'
+  credentials: false,
+  preflightContinue: false,
+  optionsSuccessStatus: 200
 }));
+
+// Additional CORS handling for preflight requests
+app.options('*', cors());
+
+// Manual CORS headers for all requests (backup)
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control');
+  res.header('Access-Control-Max-Age', '86400');
+  
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+  
+  next();
+});
 
 // MongoDB Connection with retry logic for Render
 const connectDB = async () => {
