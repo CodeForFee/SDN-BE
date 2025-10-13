@@ -32,7 +32,7 @@
           "email": { "type": "string", "format": "email" },
           "role": { 
             "type": "string", 
-            "enum": ["DealerStaff", "DealerManager", "EVMStaff", "Admin"] 
+            "enum": ["Dealer Staff", "Dealer Manager", "EVM Staff", "Admin"] 
           },
           "createdAt": { "type": "string", "format": "date-time" },
           "updatedAt": { "type": "string", "format": "date-time" }
@@ -81,9 +81,32 @@
         "type": "object",
         "properties": {
           "_id": { "type": "string" },
-          "customer": { "type": "string" },
-          "dealer": { "type": "string" },
-          "vehicle": { "type": "string" },
+          "customer": { 
+            "type": "object",
+            "properties": {
+              "_id": { "type": "string" },
+              "name": { "type": "string" },
+              "email": { "type": "string" },
+              "phone": { "type": "string" }
+            }
+          },
+          "dealer": { 
+            "type": "object",
+            "properties": {
+              "_id": { "type": "string" },
+              "name": { "type": "string" },
+              "location": { "type": "string" }
+            }
+          },
+          "vehicle": { 
+            "type": "object",
+            "properties": {
+              "_id": { "type": "string" },
+              "model": { "type": "string" },
+              "version": { "type": "string" },
+              "price": { "type": "number" }
+            }
+          },
           "status": { 
             "type": "string", 
             "enum": ["Pending", "Confirmed", "Delivered"] 
@@ -101,8 +124,22 @@
         "type": "object",
         "properties": {
           "_id": { "type": "string" },
-          "vehicle": { "type": "string" },
-          "dealer": { "type": "string" },
+          "vehicle": { 
+            "type": "object",
+            "properties": {
+              "_id": { "type": "string" },
+              "name": { "type": "string" },
+              "model": { "type": "string" }
+            }
+          },
+          "dealer": { 
+            "type": "object",
+            "properties": {
+              "_id": { "type": "string" },
+              "name": { "type": "string" },
+              "address": { "type": "string" }
+            }
+          },
           "quantity": { "type": "number" },
           "createdAt": { "type": "string", "format": "date-time" },
           "updatedAt": { "type": "string", "format": "date-time" }
@@ -112,8 +149,22 @@
         "type": "object",
         "properties": {
           "_id": { "type": "string" },
-          "customer": { "type": "string" },
-          "vehicle": { "type": "string" },
+          "customer": { 
+            "type": "object",
+            "properties": {
+              "_id": { "type": "string" },
+              "name": { "type": "string" },
+              "email": { "type": "string" }
+            }
+          },
+          "vehicle": { 
+            "type": "object",
+            "properties": {
+              "_id": { "type": "string" },
+              "model": { "type": "string" },
+              "brand": { "type": "string" }
+            }
+          },
           "testDriveDate": { "type": "string", "format": "date-time" },
           "status": { 
             "type": "string", 
@@ -132,7 +183,14 @@
           "discountPercent": { "type": "number" },
           "startDate": { "type": "string", "format": "date-time" },
           "endDate": { "type": "string", "format": "date-time" },
-          "dealer": { "type": "string" },
+          "dealer": { 
+            "type": "object",
+            "properties": {
+              "_id": { "type": "string" },
+              "name": { "type": "string" },
+              "location": { "type": "string" }
+            }
+          },
           "createdAt": { "type": "string", "format": "date-time" },
           "updatedAt": { "type": "string", "format": "date-time" }
         }
@@ -141,9 +199,32 @@
         "type": "object",
         "properties": {
           "_id": { "type": "string" },
-          "customer": { "type": "string" },
-          "dealer": { "type": "string" },
-          "vehicle": { "type": "string" },
+          "customer": { 
+            "type": "object",
+            "properties": {
+              "_id": { "type": "string" },
+              "name": { "type": "string" },
+              "email": { "type": "string" },
+              "phone": { "type": "string" }
+            }
+          },
+          "dealer": { 
+            "type": "object",
+            "properties": {
+              "_id": { "type": "string" },
+              "name": { "type": "string" }
+            }
+          },
+          "vehicle": { 
+            "type": "object",
+            "properties": {
+              "_id": { "type": "string" },
+              "name": { "type": "string" },
+              "model": { "type": "string" },
+              "year": { "type": "string" },
+              "price": { "type": "number" }
+            }
+          },
           "quotedPrice": { "type": "number" },
           "validUntil": { "type": "string", "format": "date-time" },
           "status": { 
@@ -172,7 +253,7 @@
           "password": { "type": "string", "minLength": 6 },
           "role": { 
             "type": "string", 
-            "enum": ["DealerStaff", "DealerManager", "EVMStaff", "Admin"] 
+            "enum": ["Dealer Staff", "Dealer Manager", "EVM Staff", "Admin"] 
           }
         }
       },
@@ -649,6 +730,28 @@
       }
     },
     "/orders/{id}": {
+      "get": {
+        "tags": ["Orders"],
+        "summary": "Get order by ID (Dealer Staff/Manager/Admin only)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Order details",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Order" }
+              }
+            }
+          }
+        }
+      },
       "put": {
         "tags": ["Orders"],
         "summary": "Update order (Dealer Manager/Admin only)",
@@ -1163,9 +1266,29 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "totalSales": { "type": "number" },
-                    "salesByDealer": { "type": "object" },
-                    "salesByMonth": { "type": "object" }
+                    "success": { "type": "boolean" },
+                    "period": {
+                      "type": "object",
+                      "properties": {
+                        "startDate": { "type": "string", "format": "date-time" },
+                        "endDate": { "type": "string", "format": "date-time" }
+                      }
+                    },
+                    "summary": {
+                      "type": "object",
+                      "properties": {
+                        "totalOrders": { "type": "number" },
+                        "totalRevenue": { "type": "number" },
+                        "pendingOrders": { "type": "number" },
+                        "confirmedOrders": { "type": "number" },
+                        "deliveredOrders": { "type": "number" }
+                      }
+                    },
+                    "dealerStats": { "type": "object" },
+                    "orders": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Order" }
+                    }
                   }
                 }
               }
@@ -1186,8 +1309,29 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "totalDebt": { "type": "number" },
-                    "debtByDealer": { "type": "object" }
+                    "success": { "type": "boolean" },
+                    "summary": {
+                      "type": "object",
+                      "properties": {
+                        "totalDealers": { "type": "number" },
+                        "totalDebt": { "type": "number" },
+                        "dealersWithDebt": { "type": "number" },
+                        "averageDebt": { "type": "number" }
+                      }
+                    },
+                    "dealers": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string" },
+                          "name": { "type": "string" },
+                          "location": { "type": "string" },
+                          "debt": { "type": "number" },
+                          "salesTarget": { "type": "number" }
+                        }
+                      }
+                    }
                   }
                 }
               }
@@ -1208,9 +1352,45 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "totalInventory": { "type": "number" },
-                    "inventoryByDealer": { "type": "object" },
-                    "lowStockItems": { "type": "array" }
+                    "success": { "type": "boolean" },
+                    "summary": {
+                      "type": "object",
+                      "properties": {
+                        "totalItems": { "type": "number" },
+                        "totalQuantity": { "type": "number" },
+                        "lowStockItems": { "type": "number" },
+                        "outOfStockItems": { "type": "number" }
+                      }
+                    },
+                    "dealerStats": { "type": "object" },
+                    "lowStockItems": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string" },
+                          "vehicle": { "type": "string" },
+                          "dealer": { "type": "string" },
+                          "quantity": { "type": "number" }
+                        }
+                      }
+                    },
+                    "outOfStockItems": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string" },
+                          "vehicle": { "type": "string" },
+                          "dealer": { "type": "string" },
+                          "quantity": { "type": "number" }
+                        }
+                      }
+                    },
+                    "allInventory": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Inventory" }
+                    }
                   }
                 }
               }
