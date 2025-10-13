@@ -11,7 +11,7 @@
   },
   "servers": [
     {
-      "url": "https://sdn-be.onrender.com/api",
+      "url": "https://sdn-be-1htr.onrender.com/api-docs",
       "description": "Production server (Render)"
     }
   ],
