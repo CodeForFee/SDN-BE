@@ -94,12 +94,35 @@ app.get('/', (req, res) => {
     message: 'Electric Vehicle Dealer Management System API',
     version: '1.0.0',
     documentation: '/api-docs',
-    health: '/health'
+    health: '/health',
+    endpoints: {
+      auth: '/api/auth',
+      vehicles: '/api/vehicles',
+      dealers: '/api/dealers',
+      customers: '/api/customers',
+      orders: '/api/orders',
+      inventory: '/api/inventory',
+      bookings: '/api/bookings',
+      quotes: '/api/quotes',
+      promotions: '/api/promotions',
+      reports: '/api/reports'
+    }
   });
 });
 
 // Swagger Documentation
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: "EVM API Documentation",
+  swaggerOptions: {
+    persistAuthorization: true,
+    displayRequestDuration: true,
+    docExpansion: 'none',
+    filter: true,
+    showExtensions: true,
+    showCommonExtensions: true
+  }
+}));
 
 // 404 handler
 app.use((req, res) => {
