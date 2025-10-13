@@ -11,7 +11,11 @@
   },
   "servers": [
     {
-      "url": "https://sdn-be-1htr.onrender.com/api-docs",
+      "url": "http://localhost:5000/api",
+      "description": "Development server"
+    },
+    {
+      "url": "https://sdn-be-1htr.onrender.com/api",
       "description": "Production server (Render)"
     }
   ],
