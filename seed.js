@@ -11,6 +11,7 @@ const Order = require("./model/Order");
 const Inventory = require("./model/Inventory");
 const Promotion = require("./model/Promotion");
 const Booking = require("./model/Booking");
+const Quote = require("./model/Quote");
 
 mongoose
   .connect(process.env.MONGO_URI)
@@ -28,11 +29,12 @@ const seed = async () => {
     await Inventory.deleteMany();
     await Promotion.deleteMany();
     await Booking.deleteMany();
+    await Quote.deleteMany();
 
     console.log("🧹 Old data cleared");
 
     // Seed Users
-    const users = await User.insertMany([
+    const userData = [
       {
         name: "System Admin",
         email: "admin@evms.com",
@@ -57,7 +59,14 @@ const seed = async () => {
         password: "123456",
         role: "EVMStaff",
       },
-    ]);
+    ];
+
+    const users = [];
+    for (const user of userData) {
+      const newUser = new User(user);
+      await newUser.save();
+      users.push(newUser);
+    }
 
     // Seed Customers
     const customers = await Customer.insertMany([
@@ -70,34 +79,34 @@ const seed = async () => {
       {
         name: "Hanoi EV Dealer",
         location: "Hanoi",
-        manager: users[1]._id,
-        staff: [users[2]._id],
+        contactInfo: "hanoi@evdealer.com",
+        salesTarget: 100,
+        debt: 0,
       },
       {
         name: "HCM EV Dealer",
         location: "Ho Chi Minh",
-        manager: users[1]._id,
-        staff: [users[2]._id],
+        contactInfo: "hcm@evdealer.com",
+        salesTarget: 150,
+        debt: 0,
       },
     ]);
 
     // Seed Vehicles
     const vehicles = await Vehicle.insertMany([
       {
-        brand: "VinFast",
         model: "VF8",
-        year: 2024,
-        price: 60000,
+        version: "Standard",
+        color: "White",
+        price: 6000000000,
         features: ["Electric", "Autopilot", "AI Assistant"],
-        stock: 10,
       },
       {
-        brand: "Tesla",
         model: "Model 3",
-        year: 2025,
-        price: 55000,
+        version: "Performance",
+        color: "Black",
+        price: 5500000000,
         features: ["Electric", "Autopilot"],
-        stock: 8,
       },
     ]);
 
@@ -107,17 +116,17 @@ const seed = async () => {
         customer: customers[0]._id,
         vehicle: vehicles[0]._id,
         dealer: dealers[0]._id,
-        totalPrice: 60000,
         status: "Confirmed",
-        paymentMethod: "Cash",
+        paymentType: "Cash",
+        amount: 6000000000,
       },
       {
         customer: customers[1]._id,
         vehicle: vehicles[1]._id,
         dealer: dealers[1]._id,
-        totalPrice: 55000,
         status: "Pending",
-        paymentMethod: "Installment",
+        paymentType: "Installment",
+        amount: 5500000000,
       },
     ]);
 
@@ -133,9 +142,9 @@ const seed = async () => {
         title: "New Year Discount",
         description: "10% off for all vehicles",
         discountPercent: 10,
-        validFrom: new Date(),
-        validTo: new Date(new Date().setMonth(new Date().getMonth() + 1)),
-        vehicles: [vehicles[0]._id, vehicles[1]._id],
+        startDate: new Date(),
+        endDate: new Date(new Date().setMonth(new Date().getMonth() + 1)),
+        dealer: dealers[0]._id,
       },
     ]);
 
@@ -152,6 +161,28 @@ const seed = async () => {
         vehicle: vehicles[1]._id,
         testDriveDate: new Date(),
         status: "Completed",
+      },
+    ]);
+
+    // Seed Quotes
+    await Quote.insertMany([
+      {
+        customer: customers[0]._id,
+        dealer: dealers[0]._id,
+        vehicle: vehicles[0]._id,
+        quotedPrice: 6000000000,
+        validUntil: new Date(new Date().setDate(new Date().getDate() + 7)),
+        status: "Active",
+        notes: "Special discount for loyal customer",
+      },
+      {
+        customer: customers[1]._id,
+        dealer: dealers[1]._id,
+        vehicle: vehicles[1]._id,
+        quotedPrice: 5500000000,
+        validUntil: new Date(new Date().setDate(new Date().getDate() + 5)),
+        status: "Accepted",
+        notes: "Installment payment option",
       },
     ]);
 
