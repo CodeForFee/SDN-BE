@@ -1,12 +1,6 @@
 const User = require("../model/User");
-const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs");
 const { ROLES } = require("../model/User");
-
-// Generate JWT
-const generateToken = (id, role) => {
-  return jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: "1d" });
-};
+const { generateToken } = require("../utils/jwt");
 
 // @desc Register user (only Admin)
 exports.register = async (req, res) => {

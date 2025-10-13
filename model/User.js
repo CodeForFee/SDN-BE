@@ -1,14 +1,21 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
-const ROLES = ["DealerStaff", "DealerManager", "EVMStaff", "Admin"];
+const ROLES = ["Dealer Staff", "Dealer Manager", "EVM Staff", "Admin"];
 
 const userSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
-    role: { type: String, enum: ROLES, default: "DealerStaff" },
+    role: { type: String, enum: ROLES, default: "Dealer Staff" },
+    dealer: { 
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: "Dealer",
+      required: function() {
+        return this.role === "Dealer Staff" || this.role === "Dealer Manager";
+      }
+    },
   },
   { timestamps: true }
 );
