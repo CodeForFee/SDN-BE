@@ -20,3 +20,8 @@ databases:
   - name: sdn-mongodb
     plan: free
     databaseName: sdn_db
+  
+cronJobs:
+  - name: sdn-be-keepalive
+    schedule: "*/10 * * * *" # every 10 minutes
+    command: curl -fsS https://sdn-be-1htr.onrender.com/health || true
