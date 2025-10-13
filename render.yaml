@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: sdn-be
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        fromDatabase:
+          name: sdn-mongodb
+          property: connectionString
+    healthCheckPath: /health
+    autoDeploy: true
+    branch: main
+
+databases:
+  - name: sdn-mongodb
+    plan: free
+    databaseName: sdn_db

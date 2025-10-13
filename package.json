@@ -5,7 +5,10 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon index.js",
-    "start": "node index.js"
+    "start": "node index.js",
+    "seed": "node seed.js",
+    "build": "echo 'No build step required'",
+    "test": "echo 'No tests specified'"
   },
   "repository": {
     "type": "git",
