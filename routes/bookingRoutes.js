@@ -6,7 +6,7 @@ const {
   getBookingById,
   updateBooking,
   deleteBooking,
-} = require("../controllers/bookingController");
+} = require("../controllers/BookingController");
 const { protect } = require("../middleware/authMiddleware");
 
 // Tạo lịch hẹn lái thử (Dealer Staff, Dealer Manager)
