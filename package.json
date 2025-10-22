@@ -7,8 +7,12 @@
     "dev": "nodemon index.js",
     "start": "node index.js",
     "seed": "node seed.js",
-    "build": "echo 'No build step required'",
-    "test": "echo 'No tests specified'"
+    "test": "node test-runner.js",
+    "test:api": "node test-api-flow.js",
+    "test:real": "node real-test.js",
+    "test:debug": "node debug-test.js",
+    "test:auth": "node auth-only-test.js",
+    "build": "echo 'No build step required'"
   },
   "repository": {
     "type": "git",
@@ -22,6 +26,7 @@
   },
   "homepage": "https://github.com/CodeForFee/SDN-BE#readme",
   "dependencies": {
+    "axios": "^1.12.2",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",

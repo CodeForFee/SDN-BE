@@ -1,8 +1,8 @@
 const asyncHandler = require("express-async-handler");
-const Quote = require("../model/Quote");
-const Customer = require("../model/Customer");
-const Dealer = require("../model/Dealer");
-const Vehicle = require("../model/Vehicle");
+const Quote = require("../models/Quote");
+const Customer = require("../models/Customer");
+const Dealer = require("../models/Dealer");
+const VehicleVariant = require("../models/VehicleVariant");
 
 const getQuotes = asyncHandler(async (req, res) => {
   let filter = {};
@@ -20,18 +20,32 @@ const getQuotes = asyncHandler(async (req, res) => {
   }
 
   const quotes = await Quote.find(filter)
-    .populate("Customer", "name email phone")
-    .populate("Dealer", "name")
-    .populate("Vehicle", "name model year price");
+    .populate("customer", "fullName email phone")
+    .populate("dealer", "name")
+    .populate({
+      path: "items.variant",
+      select: "trim msrp"
+    })
+    .populate({
+      path: "items.color",
+      select: "name code"
+    });
 
   res.status(200).json(quotes);
 });
 
 const getQuoteById = asyncHandler(async (req, res) => {
   const quote = await Quote.findById(req.params.id)
-    .populate("Customer", "name email phone")
-    .populate("Dealer", "name")
-    .populate("Vehicle", "name model year price");
+    .populate("customer", "fullName email phone")
+    .populate("dealer", "name")
+    .populate({
+      path: "items.variant",
+      select: "trim msrp"
+    })
+    .populate({
+      path: "items.color",
+      select: "name code"
+    });
 
   if (!quote) {
     res.status(404);
@@ -52,39 +66,42 @@ const getQuoteById = asyncHandler(async (req, res) => {
 });
 
 const createQuote = asyncHandler(async (req, res) => {
-  const { customer, vehicle, quotedPrice, validUntil, notes } = req.body;
+  const { customer, items, subtotal, discount, total, validUntil, notes } = req.body;
   const dealer = req.user.dealer; // Lấy ID đại lý từ user đã đăng nhập
 
-  if (!customer || !vehicle || !quotedPrice || !dealer) {
+  if (!customer || !items || !items.length || !dealer) {
     res.status(400);
     throw new Error(
-      "Vui lòng cung cấp đầy đủ: customer, vehicle, quotedPrice."
+      "Vui lòng cung cấp đầy đủ: customer, items, dealer."
     );
   }
 
-  // Kiểm tra tính hợp lệ của các ID
-  const [customerExists, vehicleExists] = await Promise.all([
-    Customer.findById(customer),
-    Vehicle.findById(vehicle),
-  ]);
-
+  // Kiểm tra tính hợp lệ của customer
+  const customerExists = await Customer.findById(customer);
   if (!customerExists) {
     res.status(404);
     throw new Error("ID khách hàng không hợp lệ.");
   }
-  if (!vehicleExists) {
-    res.status(404);
-    throw new Error("ID xe không hợp lệ.");
+
+  // Kiểm tra tính hợp lệ của các variant trong items
+  for (const item of items) {
+    const variantExists = await VehicleVariant.findById(item.variant);
+    if (!variantExists) {
+      res.status(404);
+      throw new Error(`ID variant ${item.variant} không hợp lệ.`);
+    }
   }
 
   const newQuote = await Quote.create({
     customer,
     dealer,
-    vehicle,
-    quotedPrice,
+    items,
+    subtotal,
+    discount,
+    total,
     validUntil,
     notes,
-    // status mặc định là 'Active'
+    status: 'draft',
   });
 
   res.status(201).json(newQuote);
@@ -128,9 +145,16 @@ const updateQuote = asyncHandler(async (req, res) => {
     updateFields,
     { new: true, runValidators: true }
   )
-    .populate("Customer")
-    .populate("Dealer")
-    .populate("Vehicle");
+    .populate("customer", "fullName email phone")
+    .populate("dealer", "name")
+    .populate({
+      path: "items.variant",
+      select: "trim msrp"
+    })
+    .populate({
+      path: "items.color",
+      select: "name code"
+    });
 
   res.status(200).json(updatedQuote);
 });

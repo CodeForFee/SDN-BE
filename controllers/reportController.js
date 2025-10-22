@@ -1,7 +1,7 @@
-const Order = require("../model/Order");
-const Inventory = require("../model/Inventory");
-const Dealer = require("../model/Dealer");
-const Vehicle = require("../model/Vehicle");
+const Order = require("../models/Order");
+const Inventory = require("../models/Inventory");
+const Dealer = require("../models/Dealer");
+const VehicleVariant = require("../models/VehicleVariant");
 
 // @desc Sales report
 exports.salesReport = async (req, res) => {
@@ -32,9 +32,12 @@ exports.salesReport = async (req, res) => {
     }
 
     const orders = await Order.find(filter)
-      .populate("customer", "name")
-      .populate("dealer", "name location")
-      .populate("vehicle", "model version price");
+      .populate("customer", "fullName")
+      .populate("dealer", "name address")
+      .populate({
+        path: "items.variant",
+        select: "trim msrp"
+      });
 
     // Tính toán thống kê
     const totalOrders = orders.length;
@@ -120,7 +123,7 @@ exports.debtReport = async (req, res) => {
       dealers: dealersWithDebt.map(dealer => ({
         id: dealer._id,
         name: dealer.name,
-        location: dealer.location,
+        address: dealer.address,
         debt: dealer.debt || 0,
         salesTarget: dealer.salesTarget || 0
       }))
@@ -140,7 +143,8 @@ exports.inventoryReport = async (req, res) => {
     // Nếu là Dealer Manager, chỉ xem tồn kho của dealer mình
     if (userRole === "Dealer Manager") {
       if (req.user.dealer) {
-        filter.dealer = req.user.dealer;
+        filter.owner = req.user.dealer;
+        filter.ownerType = "Dealer";
       } else {
         return res.status(400).json({ 
           message: "Tài khoản đại lý chưa được liên kết với đại lý nào." 
@@ -149,8 +153,9 @@ exports.inventoryReport = async (req, res) => {
     }
 
     const inventory = await Inventory.find(filter)
-      .populate("vehicle", "model version price")
-      .populate("dealer", "name location");
+      .populate("variant", "trim msrp")
+      .populate("color", "name code")
+      .populate("owner", "name address");
 
     // Tính toán thống kê
     const totalItems = inventory.length;
@@ -161,19 +166,21 @@ exports.inventoryReport = async (req, res) => {
     // Thống kê theo dealer
     const dealerStats = {};
     inventory.forEach(item => {
-      const dealerName = item.dealer.name;
-      if (!dealerStats[dealerName]) {
-        dealerStats[dealerName] = {
-          totalItems: 0,
-          totalQuantity: 0,
-          lowStockItems: 0,
-          outOfStockItems: 0
-        };
+      if (item.ownerType === 'Dealer' && item.owner) {
+        const dealerName = item.owner.name;
+        if (!dealerStats[dealerName]) {
+          dealerStats[dealerName] = {
+            totalItems: 0,
+            totalQuantity: 0,
+            lowStockItems: 0,
+            outOfStockItems: 0
+          };
+        }
+        dealerStats[dealerName].totalItems++;
+        dealerStats[dealerName].totalQuantity += item.quantity;
+        if (item.quantity < 5) dealerStats[dealerName].lowStockItems++;
+        if (item.quantity === 0) dealerStats[dealerName].outOfStockItems++;
       }
-      dealerStats[dealerName].totalItems++;
-      dealerStats[dealerName].totalQuantity += item.quantity;
-      if (item.quantity < 5) dealerStats[dealerName].lowStockItems++;
-      if (item.quantity === 0) dealerStats[dealerName].outOfStockItems++;
     });
 
     res.status(200).json({
@@ -187,14 +194,18 @@ exports.inventoryReport = async (req, res) => {
       dealerStats,
       lowStockItems: lowStockItems.map(item => ({
         id: item._id,
-        vehicle: item.vehicle.model,
-        dealer: item.dealer.name,
+        variant: item.variant ? item.variant.trim : 'N/A',
+        color: item.color ? item.color.name : 'N/A',
+        owner: item.owner ? item.owner.name : 'N/A',
+        ownerType: item.ownerType,
         quantity: item.quantity
       })),
       outOfStockItems: outOfStockItems.map(item => ({
         id: item._id,
-        vehicle: item.vehicle.model,
-        dealer: item.dealer.name,
+        variant: item.variant ? item.variant.trim : 'N/A',
+        color: item.color ? item.color.name : 'N/A',
+        owner: item.owner ? item.owner.name : 'N/A',
+        ownerType: item.ownerType,
         quantity: item.quantity
       })),
       allInventory: inventory

@@ -1,39 +1,15 @@
-const express = require("express");
-const router = express.Router();
-const quoteController = require("../controllers/quoteController");
-const { protect } = require("../middleware/authMiddleware");
-const { allowRoles } = require("../middleware/roles");
+const express = require('express');
+const Quote = require('../models/Quote');
+const createCrudController = require('../controllers/crudController');
 
-// Dealer Staff/Manager tạo và quản lý báo giá
-router.get(
-  "/",
-  protect,
-  allowRoles("Dealer Staff", "Dealer Manager", "Admin"),
-  quoteController.getQuotes
-);
-router.post(
-  "/",
-  protect,
-  allowRoles("Dealer Staff", "Dealer Manager"),
-  quoteController.createQuote
-);
-router.get(
-  "/:id",
-  protect,
-  allowRoles("Dealer Staff", "Dealer Manager", "Admin"),
-  quoteController.getQuoteById
-);
-router.put(
-  "/:id",
-  protect,
-  allowRoles("Dealer Manager", "Admin"),
-  quoteController.updateQuote
-);
-router.delete(
-  "/:id",
-  protect,
-  allowRoles("Dealer Manager", "Admin"),
-  quoteController.deleteQuote
-);
+const router = express.Router();
+const ctrl = createCrudController(Quote);
+
+router.get('/', ctrl.list);
+router.get('/:id', ctrl.get);
+router.post('/', ctrl.create);
+router.patch('/:id', ctrl.update);
+router.delete('/:id', ctrl.remove);
 
 module.exports = router;
+

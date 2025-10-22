@@ -1,10 +1,12 @@
-const Promotion = require("../model/Promotion");
-require("../model/Dealer");
+const Promotion = require("../models/Promotion");
+require("../models/Dealer");
 
 // Lấy tất cả khuyến mãi
 exports.getPromotions = async (req, res) => {
   try {
-    const promotions = await Promotion.find().populate("dealer");
+    const promotions = await Promotion.find()
+      .populate("dealers", "name address")
+      .populate("variants", "trim msrp");
     res.status(200).json(promotions);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -14,15 +16,19 @@ exports.getPromotions = async (req, res) => {
 // Tạo khuyến mãi mới
 exports.createPromotion = async (req, res) => {
   try {
-    const { title, description, discountPercent, startDate, endDate, dealer } = req.body;
+    const { name, scope, dealers, variants, type, value, validFrom, validTo, stackable, status } = req.body;
 
     const newPromotion = new Promotion({
-      title,
-      description,
-      discountPercent,
-      startDate,
-      endDate,
-      dealer,
+      name,
+      scope,
+      dealers,
+      variants,
+      type,
+      value,
+      validFrom,
+      validTo,
+      stackable,
+      status,
     });
 
     await newPromotion.save();

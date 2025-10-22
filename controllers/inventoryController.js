@@ -1,7 +1,7 @@
 const asyncHandler = require("express-async-handler");
-const Inventory = require("../model/Inventory");
-const Vehicle = require("../model/Vehicle");
-const Dealer = require("../model/Dealer");
+const Inventory = require("../models/Inventory");
+const VehicleVariant = require("../models/VehicleVariant");
+const Dealer = require("../models/Dealer");
 
 const getInventory = asyncHandler(async (req, res) => {
   let filter = {};
@@ -9,7 +9,8 @@ const getInventory = asyncHandler(async (req, res) => {
 
   if (userRole === "Dealer Manager") {
     if (req.user.dealer) {
-      filter.dealer = req.user.dealer;
+      filter.owner = req.user.dealer;
+      filter.ownerType = "Dealer";
     } else {
       res.status(400);
       throw new Error("Dealer Manager không liên kết với đại lý nào.");
@@ -17,36 +18,37 @@ const getInventory = asyncHandler(async (req, res) => {
   }
 
   const inventory = await Inventory.find(filter)
-    .populate("Vehicle", "name model")
-    .populate("Dealer", "name address");
+    .populate("variant", "trim msrp")
+    .populate("color", "name code")
+    .populate("owner", "name address");
 
   res.status(200).json(inventory);
 });
 
 const createInventory = asyncHandler(async (req, res) => {
-  const { vehicle, dealer, quantity } = req.body;
+  const { variant, color, owner, ownerType, quantity } = req.body;
 
-  if (!vehicle || !dealer || quantity === undefined) {
+  if (!variant || !owner || !ownerType || quantity === undefined) {
     res.status(400);
     throw new Error(
-      "Vui lòng nhập đầy đủ các trường: vehicle, dealer, quantity."
+      "Vui lòng nhập đầy đủ các trường: variant, owner, ownerType, quantity."
     );
   }
 
-  const vehicleExists = await Vehicle.findById(vehicle);
-  const dealerExists = await Dealer.findById(dealer);
+  const variantExists = await VehicleVariant.findById(variant);
+  const dealerExists = await Dealer.findById(owner);
 
-  if (!vehicleExists) {
+  if (!variantExists) {
     res.status(404);
-    throw new Error("ID xe (Vehicle) không hợp lệ hoặc không tồn tại.");
+    throw new Error("ID variant không hợp lệ hoặc không tồn tại.");
   }
 
   if (!dealerExists) {
     res.status(404);
-    throw new Error("ID đại lý (Dealer) không hợp lệ hoặc không tồn tại.");
+    throw new Error("ID đại lý không hợp lệ hoặc không tồn tại.");
   }
 
-  const existingInventory = await Inventory.findOne({ vehicle, dealer });
+  const existingInventory = await Inventory.findOne({ variant, color, owner, ownerType });
 
   if (existingInventory) {
     res.status(400);
@@ -56,8 +58,10 @@ const createInventory = asyncHandler(async (req, res) => {
   }
 
   const newInventory = await Inventory.create({
-    vehicle,
-    dealer,
+    variant,
+    color,
+    owner,
+    ownerType,
     quantity,
   });
 
@@ -85,8 +89,9 @@ const updateInventory = asyncHandler(async (req, res) => {
     { quantity },
     { new: true, runValidators: true }
   )
-    .populate("Vehicle")
-    .populate("Dealer");
+    .populate("variant", "trim msrp")
+    .populate("color", "name code")
+    .populate("owner", "name address");
 
   res.status(200).json(updatedInventory);
 });

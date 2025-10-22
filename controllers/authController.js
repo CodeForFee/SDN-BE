@@ -1,11 +1,11 @@
-const User = require("../model/User");
-const { ROLES } = require("../model/User");
+const User = require("../models/User");
+const { ROLES } = require("../models/User");
 const { generateToken } = require("../utils/jwt");
 
 // @desc Register user (only Admin)
 exports.register = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { email, password, role, profile, dealer } = req.body;
 
     if (!req.user || req.user.role !== "Admin") {
       return res
@@ -20,15 +20,16 @@ exports.register = async (req, res) => {
     const exists = await User.findOne({ email });
     if (exists) return res.status(400).json({ message: "User already exists" });
 
-    const user = await User.create({ name, email, password, role });
+    const user = await User.create({ email, password, role, profile, dealer });
 
     res.status(201).json({
       message: "User registered successfully",
       user: {
         id: user._id,
-        name: user.name,
         email: user.email,
         role: user.role,
+        profile: user.profile,
+        dealer: user.dealer,
       },
     });
   } catch (err) {
@@ -54,9 +55,11 @@ exports.login = async (req, res) => {
       message: "Login successful",
       token,
       user: {
-        id: user._id,
-        name: user.name,
+        _id: user._id,
+        email: user.email,
         role: user.role,
+        profile: user.profile,
+        dealer: user.dealer,
       },
     });
   } catch (err) {

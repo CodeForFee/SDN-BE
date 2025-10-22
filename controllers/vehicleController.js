@@ -1,13 +1,15 @@
-const Vehicle = require('../model/Vehicle'); 
+const VehicleModel = require('../models/VehicleModel');
+const VehicleVariant = require('../models/VehicleVariant');
+const VehicleColor = require('../models/VehicleColor'); 
 
 exports.getVehicles = async (req, res) => { 
     try{ 
-        const vehicles = await Vehicle.find(); 
+        const variants = await VehicleVariant.find().populate('model'); 
         
         res.status(200).json({ 
             success: true, 
-            count: vehicles.length, 
-            data: vehicles 
+            count: variants.length, 
+            data: variants 
         }) 
     } catch (error){ 
         res.status(500).json({message: error.message})
@@ -20,13 +22,13 @@ exports.getVehicleById = async(req, res) => {
 
         if(!id) return res.status(400).json({message: "Lack of information"});
 
-        const vehicle = await Vehicle.findById(id); 
+        const variant = await VehicleVariant.findById(id).populate('model'); 
         
-        if(!vehicle) return res.status(404).json({ message: "Vehicle not found"}); 
+        if(!variant) return res.status(404).json({ message: "Vehicle variant not found"}); 
         
         res.status(200).json({ 
             success: true, 
-            data: vehicle 
+            data: variant 
         }); 
     } catch (error) { 
         res.status(500).json({message: error.message}); 
@@ -35,23 +37,27 @@ exports.getVehicleById = async(req, res) => {
 
 exports.createVehicle = async (req, res) => { 
     try{ 
-        const {model, version, color, price, features} = req.body; 
+        const {model, trim, battery, range, motorPower, features, msrp, images, active} = req.body; 
         
-        if (!model || !price) return res.status(400).json({message: "Lack of information"}); 
+        if (!model || !trim || !msrp) return res.status(400).json({message: "Lack of information"}); 
         
-        const newVehicle = { 
+        const newVariant = { 
             model: model, 
-            version: version, 
-            color: color, 
-            price: price, 
-            features: features 
+            trim: trim, 
+            battery: battery, 
+            range: range, 
+            motorPower: motorPower,
+            features: features,
+            msrp: msrp,
+            images: images,
+            active: active
         } 
         
-        const createVehicle = await Vehicle.create(newVehicle); 
+        const createVariant = await VehicleVariant.create(newVariant); 
         
         res.status(201).json({ 
-            message: "Create new vehicle successfully", 
-            data: createVehicle 
+            message: "Create new vehicle variant successfully", 
+            data: createVariant 
         }) 
     } catch (error){
          res.status(500).json({ message: error.message}); 
@@ -62,27 +68,31 @@ exports.updateVehicle = async (req, res) => {
     try{ 
         const {id} = req.params; 
 
-        const {model, version, color, price, features} = req.body; 
+        const {model, trim, battery, range, motorPower, features, msrp, images, active} = req.body; 
         
-        if(!model || !price || !id) return res.status(400).json({ message: "Lack of information"}); 
+        if(!id) return res.status(400).json({ message: "Lack of information"}); 
         
-        const vehicle = { 
-            model: model, 
-            version: version, 
-            color: color, 
-            price: price, 
-            features: features
+        const variantData = { 
+            model, 
+            trim, 
+            battery, 
+            range, 
+            motorPower,
+            features,
+            msrp,
+            images,
+            active
         } 
             
-        const updateVehicle = await Vehicle.findByIdAndUpdate(id, vehicle, {new: true}); 
+        const updateVariant = await VehicleVariant.findByIdAndUpdate(id, variantData, {new: true}); 
         
-        if(!updateVehicle){ 
-            return res.status(404).json({message: "Vehicle not found"}); 
+        if(!updateVariant){ 
+            return res.status(404).json({message: "Vehicle variant not found"}); 
         } 
         
         res.status(200).json({ 
-            message: "Update vehicle successfully", 
-            data: updateVehicle 
+            message: "Update vehicle variant successfully", 
+            data: updateVariant 
         }) 
     } catch (error){ 
         res.status(500).json({message: error.message}); 
@@ -93,13 +103,13 @@ exports.deleteVehicle = async (req, res) => {
     try{ 
         const {id} = req.params;
          
-        const vehicle = await Vehicle.findByIdAndDelete(id); 
+        const variant = await VehicleVariant.findByIdAndDelete(id); 
         
-        if(!vehicle){ 
-            return res.status(404).json({ message: "Vehicle not found"}); 
+        if(!variant){ 
+            return res.status(404).json({ message: "Vehicle variant not found"}); 
         }; 
         
-        res.status(200).json({ message: "Delete vehicle successfully" }) 
+        res.status(200).json({ message: "Delete vehicle variant successfully" }) 
     } catch (error){ 
         res.status(500).json({message: error.message}); 
     } 

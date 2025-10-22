@@ -1,9 +1,9 @@
 const express = require('express');
-const Customer = require('../models/Customer');
+const Payment = require('../models/Payment');
 const createCrudController = require('../controllers/crudController');
 
 const router = express.Router();
-const ctrl = createCrudController(Customer);
+const ctrl = createCrudController(Payment);
 
 router.get('/', ctrl.list);
 router.get('/:id', ctrl.get);

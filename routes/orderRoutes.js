@@ -1,14 +1,15 @@
 const express = require('express');
-const router = express.Router();
-const orderController = require('../controllers/orderController');
-const { protect } = require('../middleware/authMiddleware');
-const { allowRoles } = require('../middleware/roles');
+const Order = require('../models/Order');
+const createCrudController = require('../controllers/crudController');
 
-// Dealer Staff/Manager tạo và quản lý đơn hàng
-router.get('/', protect, allowRoles('Dealer Staff', 'Dealer Manager', 'Admin'), orderController.getOrders);
-router.get('/:id', protect, allowRoles('Dealer Staff', 'Dealer Manager', 'Admin'), orderController.getOrderById);
-router.post('/', protect, allowRoles('Dealer Staff', 'Dealer Manager'), orderController.createOrder);
-router.put('/:id', protect, allowRoles('Dealer Manager', 'Admin'), orderController.updateOrder);
-router.delete('/:id', protect, allowRoles('Dealer Manager', 'Admin'), orderController.deleteOrder);
+const router = express.Router();
+const ctrl = createCrudController(Order);
+
+router.get('/', ctrl.list);
+router.get('/:id', ctrl.get);
+router.post('/', ctrl.create);
+router.patch('/:id', ctrl.update);
+router.delete('/:id', ctrl.remove);
 
 module.exports = router;
+

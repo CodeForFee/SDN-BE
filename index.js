@@ -63,8 +63,12 @@ const customerRoutes = require("./routes/customerRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const inventoryRoutes = require("./routes/inventoryRoutes");
 const reportRoutes = require("./routes/reportRoutes");
-const bookingRoutes = require("./routes/bookingRoutes");
 const quoteRoutes = require("./routes/quoteRoutes");
+const testDriveRoutes = require("./routes/testDriveRoutes");
+const contractRoutes = require("./routes/contractRoutes");
+const paymentRoutes = require("./routes/paymentRoutes");
+const vehicleModelRoutes = require("./routes/vehicleModelRoutes");
+const vehicleColorRoutes = require("./routes/vehicleColorRoutes");
 
 // Use Routes
 app.use("/api/auth", authRoutes);
@@ -75,8 +79,12 @@ app.use("/api/customers", customerRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/inventory", inventoryRoutes);
 app.use("/api/reports", reportRoutes);
-app.use("/api/bookings", bookingRoutes);
 app.use("/api/quotes", quoteRoutes);
+app.use("/api/test-drives", testDriveRoutes);
+app.use("/api/contracts", contractRoutes);
+app.use("/api/payments", paymentRoutes);
+app.use("/api/vehicle-models", vehicleModelRoutes);
+app.use("/api/vehicle-colors", vehicleColorRoutes);
 
 // Health check endpoint for Render
 app.get('/health', (req, res) => {
@@ -102,7 +110,6 @@ app.get('/', (req, res) => {
       customers: '/api/customers',
       orders: '/api/orders',
       inventory: '/api/inventory',
-      bookings: '/api/bookings',
       quotes: '/api/quotes',
       promotions: '/api/promotions',
       reports: '/api/reports'
