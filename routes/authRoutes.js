@@ -1,14 +1,25 @@
-const express = require("express");
+const express = require('express');
+const { login, register, me } = require('../controllers/authController');
+const { protect } = require('../middleware/authMiddleware');
+
 const router = express.Router();
-const { register, login, me } = require("../controllers/authController");
-const { protect } = require("../middleware/authMiddleware");
 
-router.post("/login", login);
+// Public routes
+router.post('/login', login);
 
-// register chỉ dành cho Admin → gọi protect trước
-router.post("/register", protect, register);
+// Protected routes
+router.post('/register', protect, register);
+router.get('/me', protect, me);
 
-// Đổi getProfile thành me
-router.get("/me", protect, me);
+// Logout (client-side token removal)
+router.post('/logout', (req, res) => {
+  res.json({ success: true, message: 'Logout successful' });
+});
+
+// Token refresh (placeholder)
+router.post('/refresh', (req, res) => {
+  res.json({ success: true, message: 'Token refresh - implement if needed' });
+});
 
 module.exports = router;
+

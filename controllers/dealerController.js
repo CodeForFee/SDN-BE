@@ -1,4 +1,4 @@
-const Dealer = require("../model/Dealer");
+const Dealer = require("../models/Dealer");
 
 exports.getDealers = async (req, res) => {
   try {

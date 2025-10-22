@@ -1,7 +1,7 @@
-const Order = require("../model/Order");
-const Customer = require("../model/Customer");
-const Dealer = require("../model/Dealer");
-const Vehicle = require("../model/Vehicle");
+const Order = require("../models/Order");
+const Customer = require("../models/Customer");
+const Dealer = require("../models/Dealer");
+const VehicleVariant = require("../models/VehicleVariant");
 
 // @desc Get all orders
 exports.getOrders = async (req, res) => {
@@ -21,9 +21,16 @@ exports.getOrders = async (req, res) => {
     }
 
     const orders = await Order.find(filter)
-      .populate("customer", "name email phone")
-      .populate("dealer", "name location")
-      .populate("vehicle", "model version price");
+      .populate("customer", "fullName email phone")
+      .populate("dealer", "name address")
+      .populate({
+        path: "items.variant",
+        select: "trim msrp"
+      })
+      .populate({
+        path: "items.color",
+        select: "name code"
+      });
 
     res.status(200).json({
       success: true,
@@ -41,9 +48,16 @@ exports.getOrderById = async (req, res) => {
     const { id } = req.params;
 
     const order = await Order.findById(id)
-      .populate("customer", "name email phone")
-      .populate("dealer", "name location")
-      .populate("vehicle", "model version price");
+      .populate("customer", "fullName email phone")
+      .populate("dealer", "name address")
+      .populate({
+        path: "items.variant",
+        select: "trim msrp"
+      })
+      .populate({
+        path: "items.color",
+        select: "name code"
+      });
 
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
@@ -70,41 +84,54 @@ exports.getOrderById = async (req, res) => {
 // @desc Create new order
 exports.createOrder = async (req, res) => {
   try {
-    const { customer, vehicle, paymentType, amount } = req.body;
+    const { customer, items, paymentMethod, deposit } = req.body;
     const dealer = req.user.dealer; // Lấy ID đại lý từ user đã đăng nhập
 
-    if (!customer || !vehicle || !dealer) {
+    if (!customer || !items || !items.length || !dealer) {
       return res.status(400).json({ 
-        message: "Vui lòng cung cấp đầy đủ: customer, vehicle." 
+        message: "Vui lòng cung cấp đầy đủ: customer, items." 
       });
     }
 
-    // Kiểm tra tính hợp lệ của các ID
-    const [customerExists, vehicleExists] = await Promise.all([
-      Customer.findById(customer),
-      Vehicle.findById(vehicle),
-    ]);
-
+    // Kiểm tra tính hợp lệ của customer
+    const customerExists = await Customer.findById(customer);
     if (!customerExists) {
       return res.status(404).json({ message: "ID khách hàng không hợp lệ." });
     }
-    if (!vehicleExists) {
-      return res.status(404).json({ message: "ID xe không hợp lệ." });
+
+    // Kiểm tra tính hợp lệ của các variant trong items
+    for (const item of items) {
+      const variantExists = await VehicleVariant.findById(item.variant);
+      if (!variantExists) {
+        return res.status(404).json({ message: `ID variant ${item.variant} không hợp lệ.` });
+      }
     }
 
+    // Generate order number
+    const orderCount = await Order.countDocuments();
+    const orderNo = `ORD-${new Date().getFullYear()}-${String(orderCount + 1).padStart(3, '0')}`;
+
     const newOrder = await Order.create({
+      orderNo,
       customer,
       dealer,
-      vehicle,
-      paymentType: paymentType || "Cash",
-      amount: amount || vehicleExists.price,
-      status: "Pending",
+      items,
+      paymentMethod: paymentMethod || "cash",
+      deposit: deposit || 0,
+      status: "new",
     });
 
     const populatedOrder = await Order.findById(newOrder._id)
-      .populate("customer", "name email phone")
-      .populate("dealer", "name location")
-      .populate("vehicle", "model version price");
+      .populate("customer", "fullName email phone")
+      .populate("dealer", "name address")
+      .populate({
+        path: "items.variant",
+        select: "trim msrp"
+      })
+      .populate({
+        path: "items.color",
+        select: "name code"
+      });
 
     res.status(201).json({
       message: "Create new order successfully",
@@ -153,9 +180,16 @@ exports.updateOrder = async (req, res) => {
       updateFields,
       { new: true, runValidators: true }
     )
-      .populate("customer", "name email phone")
-      .populate("dealer", "name location")
-      .populate("vehicle", "model version price");
+      .populate("customer", "fullName email phone")
+      .populate("dealer", "name address")
+      .populate({
+        path: "items.variant",
+        select: "trim msrp"
+      })
+      .populate({
+        path: "items.color",
+        select: "name code"
+      });
 
     res.status(200).json({
       message: "Update order successfully",
