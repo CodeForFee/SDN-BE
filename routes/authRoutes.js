@@ -1,6 +1,7 @@
 const express = require('express');
 const { login, register, me } = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
+const { allowRoles } = require('../middleware/roles');
 
 const router = express.Router();
 
@@ -8,7 +9,8 @@ const router = express.Router();
 router.post('/login', login);
 
 // Protected routes
-router.post('/register', protect, register);
+// Only Admin and Dealer Manager can register new users (Dealer Manager can only create DealerStaff)
+router.post('/register', protect, allowRoles('Admin', 'DealerManager'), register);
 router.get('/me', protect, me);
 
 // Logout (client-side token removal)
