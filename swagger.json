@@ -29,7 +29,7 @@
       "post": {
         "tags": ["Auth"],
         "summary": "User login",
-        "description": "Login with email and password",
+        "description": "Login with email and password. Returns access token and refresh token.",
         "requestBody": {
           "required": true,
           "content": {
@@ -46,8 +46,33 @@
           }
         },
         "responses": {
-          "200": { "description": "Login successful" },
-          "401": { "description": "Unauthorized" }
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Login successful" },
+                    "token": { "type": "string", "description": "JWT access token (valid for 1 day)" },
+                    "refreshToken": { "type": "string", "description": "JWT refresh token (valid for 7 days)" },
+                    "user": {
+                      "type": "object",
+                      "properties": {
+                        "_id": { "type": "string" },
+                        "email": { "type": "string" },
+                        "role": { "type": "string" },
+                        "profile": { "type": "object" },
+                        "dealer": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Invalid credentials" },
+          "500": { "description": "Server error" }
         },
         "security": []
       }
@@ -56,7 +81,54 @@
       "post": {
         "tags": ["Auth"],
         "summary": "Refresh access token",
-        "responses": { "200": { "description": "Token refreshed" } },
+        "description": "Generate new access and refresh tokens using valid refresh token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "refreshToken": { "type": "string", "description": "Valid refresh token", "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." }
+                },
+                "required": ["refreshToken"],
+                "example": {
+                  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4ZjkwZWJlYmVhZWY3MmVjZjZlMDA1YSIsInJvbGUiOiJBZG1pbiIsInR5cGUiOiJyZWZyZXNoIiwiaWF0IjoxNzE2NTY3ODkzLCJleHAiOjE3MTcxNzI2OTN9..."
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Token refreshed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Token refreshed successfully" },
+                    "token": { "type": "string", "description": "New JWT access token" },
+                    "refreshToken": { "type": "string", "description": "New JWT refresh token" },
+                    "user": {
+                      "type": "object",
+                      "properties": {
+                        "_id": { "type": "string" },
+                        "email": { "type": "string" },
+                        "role": { "type": "string" },
+                        "profile": { "type": "object" },
+                        "dealer": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Refresh token is required" },
+          "401": { "description": "Invalid or expired refresh token" },
+          "500": { "description": "Server error" }
+        },
         "security": []
       }
     },
@@ -100,8 +172,32 @@
           }
         },
         "responses": {
-          "201": { "description": "User created successfully" },
-          "400": { "description": "Bad request" }
+          "201": {
+            "description": "User created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "User registered successfully" },
+                    "user": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string" },
+                        "email": { "type": "string" },
+                        "role": { "type": "string" },
+                        "profile": { "type": "object" },
+                        "dealer": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Bad request - User already exists or invalid data" },
+          "403": { "description": "Forbidden - Insufficient permissions" },
+          "500": { "description": "Server error" }
         }
       }
     },
@@ -120,15 +216,24 @@
                   "properties": {
                     "_id": { "type": "string" },
                     "email": { "type": "string" },
-                    "role": { "type": "string" },
-                    "profile": { "type": "object" },
-                    "dealer": { "type": "object" }
+                    "role": { "type": "string", "enum": ["Admin", "EVMStaff", "DealerManager", "DealerStaff"] },
+                    "profile": { 
+                      "type": "object",
+                      "properties": {
+                        "name": { "type": "string" },
+                        "phone": { "type": "string" }
+                      }
+                    },
+                    "dealer": { "type": "string" },
+                    "status": { "type": "string", "enum": ["active", "locked"] },
+                    "createdAt": { "type": "string", "format": "date-time" },
+                    "updatedAt": { "type": "string", "format": "date-time" }
                   }
                 }
               }
             }
           },
-          "401": { "description": "Unauthorized" }
+          "401": { "description": "Unauthorized - No token or invalid token" }
         }
       }
     },
@@ -136,7 +241,25 @@
       "post": {
         "tags": ["Auth"],
         "summary": "Logout user",
-        "responses": { "200": { "description": "Logout successful" } }
+        "description": "Logout the authenticated user. Client should remove tokens from localStorage/cookie.",
+        "responses": {
+          "200": {
+            "description": "Logout successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": { "type": "string", "example": "Logout successful" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Not authenticated" },
+          "500": { "description": "Server error" }
+        }
       }
     },
     "/api/vehicles": {
