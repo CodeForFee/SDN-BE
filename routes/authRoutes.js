@@ -1,5 +1,5 @@
 const express = require('express');
-const { login, register, me } = require('../controllers/authController');
+const { login, register, me, logout, refreshToken } = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
 const { allowRoles } = require('../middleware/roles');
 
@@ -14,14 +14,10 @@ router.post('/register', protect, allowRoles('Admin', 'DealerManager'), register
 router.get('/me', protect, me);
 
 // Logout (client-side token removal)
-router.post('/logout', (req, res) => {
-  res.json({ success: true, message: 'Logout successful' });
-});
+router.post('/logout', protect, logout);
 
-// Token refresh (placeholder)
-router.post('/refresh', (req, res) => {
-  res.json({ success: true, message: 'Token refresh - implement if needed' });
-});
+// Token refresh
+router.post('/refresh', refreshToken);
 
 module.exports = router;
 
