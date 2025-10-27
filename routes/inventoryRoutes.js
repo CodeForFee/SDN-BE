@@ -4,25 +4,27 @@ const inventoryController = require("../controllers/inventoryController");
 const { protect } = require("../middleware/authMiddleware");
 const { allowRoles } = require("../middleware/roles");
 
-// Xem tồn kho
+// Dealer Staff có thể xem, Dealer Manager có thể quản lý tồn kho của đại lý mình
+// EVM Staff & Admin quản lý toàn hệ thống
 router.get(
   "/",
   protect,
-  allowRoles("Dealer Manager", "EVM Staff", "Admin"),
+  allowRoles("DealerStaff", "DealerManager", "EVMStaff", "Admin"),
   inventoryController.getInventory
 );
 
-// Quản lý tồn kho chỉ EVM Staff & Admin
+// Dealer Manager có thể quản lý tồn kho của đại lý mình
+// EVM Staff & Admin quản lý toàn hệ thống
 router.post(
   "/",
   protect,
-  allowRoles("EVM Staff", "Admin"),
+  allowRoles("DealerManager", "EVMStaff", "Admin"),
   inventoryController.createInventory
 );
 router.put(
   "/:id",
   protect,
-  allowRoles("EVM Staff", "Admin"),
+  allowRoles("DealerManager", "EVMStaff", "Admin"),
   inventoryController.updateInventory
 );
 router.delete(
