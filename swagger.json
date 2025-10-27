@@ -3,7 +3,7 @@
   "info": {
     "title": "EVM Dealer Management API",
     "version": "1.0.0",
-    "description": "Electric Vehicle Dealer Management System API - Hệ thống quản lý bán xe điện thông qua kênh đại lý (Simplified Version)"
+    "description": "Electric Vehicle Dealer Management System API - Hệ thống quản lý bán xe điện thông qua kênh đại lý (Role-Based Access Control)"
   },
   "servers": [
     { "url": "http://localhost:5000", "description": "Development server" },
@@ -11,18 +11,18 @@
   ],
   "security": [{ "bearerAuth": [] }],
   "tags": [
-    { "name": "Auth", "description": "Authentication endpoints" },
-    { "name": "Vehicles", "description": "Vehicle management (models, variants, colors)" },
-    { "name": "Inventory", "description": "Inventory management" },
-    { "name": "Promotions", "description": "Promotion management" },
-    { "name": "Customers", "description": "Customer management" },
-    { "name": "TestDrives", "description": "Test drive booking" },
-    { "name": "Quotes", "description": "Quote management" },
-    { "name": "Orders", "description": "Order management" },
-    { "name": "Contracts", "description": "Contract management" },
-    { "name": "Payments", "description": "Payment management" },
-    { "name": "Dealers", "description": "Dealer management" },
-    { "name": "Reports", "description": "Reports and analytics" }
+    { "name": "Auth", "description": "Authentication endpoints - Role: Admin, DealerManager" },
+    { "name": "Vehicles", "description": "Vehicle management (models, variants, colors) - Role: EVMStaff, Admin" },
+    { "name": "Inventory", "description": "Inventory management - Role: DealerStaff (read), DealerManager, EVMStaff, Admin" },
+    { "name": "Promotions", "description": "Promotion management - Role: DealerStaff (read), EVMStaff, Admin" },
+    { "name": "Customers", "description": "Customer management - Role: DealerStaff, DealerManager, Admin" },
+    { "name": "TestDrives", "description": "Test drive booking - Role: DealerStaff, DealerManager, Admin" },
+    { "name": "Quotes", "description": "Quote management - Role: DealerStaff, DealerManager, Admin" },
+    { "name": "Orders", "description": "Order management - Role: DealerStaff, DealerManager, Admin" },
+    { "name": "Contracts", "description": "Contract management - Role: DealerStaff, DealerManager, Admin" },
+    { "name": "Payments", "description": "Payment management - Role: DealerStaff, DealerManager, Admin" },
+    { "name": "Dealers", "description": "Dealer management - Role: DealerManager, EVMStaff, Admin" },
+    { "name": "Reports", "description": "Reports and analytics - Role: DealerManager, EVMStaff, Admin" }
   ],
   "paths": {
     "/api/auth/login": {
@@ -63,8 +63,8 @@
     "/api/auth/register": {
       "post": {
         "tags": ["Auth"],
-        "summary": "Register new user (Protected - Admin only)",
-        "description": "Create a new user account",
+        "summary": "Register new user (Admin & DealerManager)",
+        "description": "Create a new user account - Role Required: Admin or DealerManager (DealerManager can only create DealerStaff)",
         "requestBody": {
           "required": true,
           "content": {
@@ -75,15 +75,26 @@
                   "email": { "type": "string", "example": "newuser@evms.com" },
                   "password": { "type": "string", "example": "password123" },
                   "role": { "type": "string", "enum": ["Admin", "EVMStaff", "DealerManager", "DealerStaff"], "example": "DealerStaff" },
-                  "dealer": { "type": "string", "description": "Dealer ID (required for DealerManager/DealerStaff)" },
+                  "dealer": { "type": "string", "description": "Dealer ID (required for DealerManager/DealerStaff)", "example": "68f90ebebeaef72ecf6e005a" },
                   "profile": {
                     "type": "object",
                     "properties": {
-                      "name": { "type": "string", "example": "John Doe" }
+                      "name": { "type": "string", "example": "John Doe" },
+                      "phone": { "type": "string", "example": "0901234567" }
                     }
                   }
                 },
-                "required": ["email", "password", "role"]
+                "required": ["email", "password", "role"],
+                "example": {
+                  "email": "staff@dealer.com",
+                  "password": "password123",
+                  "role": "DealerStaff",
+                  "dealer": "68f90ebebeaef72ecf6e005a",
+                  "profile": {
+                    "name": "Nguyen Van A",
+                    "phone": "0901234567"
+                  }
+                }
               }
             }
           }
@@ -272,6 +283,12 @@
                   "reserved": { "type": "number", "example": 2 },
                   "vinList": { "type": "array", "items": { "type": "string" } },
                   "location": { "type": "string" }
+                },
+                "example": {
+                  "quantity": 20,
+                  "reserved": 3,
+                  "vinList": ["VIN001234567893", "VIN001234567894"],
+                  "location": "Warehouse B - Ho Chi Minh City"
                 }
               }
             }
