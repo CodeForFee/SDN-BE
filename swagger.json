@@ -1,0 +1,1186 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "EVM Dealer Management API",
+    "version": "1.0.0",
+    "description": "Electric Vehicle Dealer Management System API - Hệ thống quản lý bán xe điện thông qua kênh đại lý (Simplified Version)"
+  },
+  "servers": [
+    { "url": "http://localhost:5000", "description": "Development server" },
+    { "url": "/", "description": "Current server" }
+  ],
+  "security": [{ "bearerAuth": [] }],
+  "tags": [
+    { "name": "Auth", "description": "Authentication endpoints" },
+    { "name": "Vehicles", "description": "Vehicle management (models, variants, colors)" },
+    { "name": "Inventory", "description": "Inventory management" },
+    { "name": "Promotions", "description": "Promotion management" },
+    { "name": "Customers", "description": "Customer management" },
+    { "name": "TestDrives", "description": "Test drive booking" },
+    { "name": "Quotes", "description": "Quote management" },
+    { "name": "Orders", "description": "Order management" },
+    { "name": "Contracts", "description": "Contract management" },
+    { "name": "Payments", "description": "Payment management" },
+    { "name": "Dealers", "description": "Dealer management" },
+    { "name": "Reports", "description": "Reports and analytics" }
+  ],
+  "paths": {
+    "/api/auth/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "User login",
+        "description": "Login with email and password",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": { "type": "string", "example": "admin@evms.com" },
+                  "password": { "type": "string", "example": "123456" }
+                },
+                "required": ["email", "password"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Login successful" },
+          "401": { "description": "Unauthorized" }
+        },
+        "security": []
+      }
+    },
+    "/api/auth/refresh": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Refresh access token",
+        "responses": { "200": { "description": "Token refreshed" } },
+        "security": []
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Register new user (Protected - Admin only)",
+        "description": "Create a new user account",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": { "type": "string", "example": "newuser@evms.com" },
+                  "password": { "type": "string", "example": "password123" },
+                  "role": { "type": "string", "enum": ["Admin", "EVMStaff", "DealerManager", "DealerStaff"], "example": "DealerStaff" },
+                  "dealer": { "type": "string", "description": "Dealer ID (required for DealerManager/DealerStaff)" },
+                  "profile": {
+                    "type": "object",
+                    "properties": {
+                      "name": { "type": "string", "example": "John Doe" }
+                    }
+                  }
+                },
+                "required": ["email", "password", "role"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "User created successfully" },
+          "400": { "description": "Bad request" }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "tags": ["Auth"],
+        "summary": "Get current user profile",
+        "description": "Returns the authenticated user's profile information",
+        "responses": {
+          "200": { 
+            "description": "User profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "_id": { "type": "string" },
+                    "email": { "type": "string" },
+                    "role": { "type": "string" },
+                    "profile": { "type": "object" },
+                    "dealer": { "type": "object" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Logout user",
+        "responses": { "200": { "description": "Logout successful" } }
+      }
+    },
+    "/api/vehicles": {
+      "get": {
+        "tags": ["Vehicles"],
+        "summary": "List all vehicle variants",
+        "responses": { "200": { "description": "List of vehicle variants" } }
+      },
+      "post": {
+        "tags": ["Vehicles"],
+        "summary": "Create new vehicle variant",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "model": { "type": "string", "description": "VehicleModel ID", "example": "68f90ebebeaef72ecf6e005e" },
+                  "trim": { "type": "string", "example": "Premium" },
+                  "battery": { "type": "string", "example": "100kWh" },
+                  "range": { "type": "number", "example": 600 },
+                  "motorPower": { "type": "number", "example": 300 },
+                  "features": { "type": "array", "items": { "type": "string" }, "example": ["Electric", "Autopilot", "AI Assistant", "Fast Charging", "Premium Interior", "Panoramic Sunroof"] },
+                  "msrp": { "type": "number", "example": 6500000000 },
+                  "images": { "type": "array", "items": { "type": "string" }, "example": ["vf8_premium_front.jpg", "vf8_premium_interior.jpg", "vf8_premium_side.jpg"] },
+                  "active": { "type": "boolean", "example": true }
+                },
+                "required": ["model", "trim", "msrp"],
+                "example": {
+                  "model": "68f90ebebeaef72ecf6e005e",
+                  "trim": "Premium",
+                  "battery": "100kWh",
+                  "range": 600,
+                  "motorPower": 300,
+                  "features": ["Electric", "Autopilot", "AI Assistant", "Fast Charging", "Premium Interior"],
+                  "msrp": 6500000000,
+                  "images": ["vf8_premium_1.jpg"],
+                  "active": true
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Vehicle variant created" } }
+      }
+    },
+    "/api/vehicles/{id}": {
+      "get": {
+        "tags": ["Vehicles"],
+        "summary": "Get vehicle variant by ID",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Vehicle variant details" } }
+      },
+      "put": {
+        "tags": ["Vehicles"],
+        "summary": "Update vehicle variant",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "trim": { "type": "string" },
+                  "battery": { "type": "string" },
+                  "range": { "type": "number" },
+                  "motorPower": { "type": "number" },
+                  "features": { "type": "array", "items": { "type": "string" } },
+                  "msrp": { "type": "number" },
+                  "images": { "type": "array", "items": { "type": "string" } },
+                  "active": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Vehicle variant updated" } }
+      },
+      "delete": {
+        "tags": ["Vehicles"],
+        "summary": "Delete vehicle variant",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Vehicle variant deleted" } }
+      }
+    },
+    "/api/inventory": {
+      "get": {
+        "tags": ["Inventory"],
+        "summary": "Get inventory (dealer-specific or global)",
+        "responses": { "200": { "description": "Inventory list" } }
+      },
+      "post": {
+        "tags": ["Inventory"],
+        "summary": "Create inventory item",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ownerType": { "type": "string", "enum": ["EVM", "Dealer"], "example": "Dealer" },
+                  "owner": { "type": "string", "description": "Dealer ID", "example": "68f90ebebeaef72ecf6e005a" },
+                  "variant": { "type": "string", "description": "VehicleVariant ID", "example": "68f90ebebeaef72ecf6e005c" },
+                  "color": { "type": "string", "description": "VehicleColor ID", "example": "68f90ebebeaef72ecf6e005d" },
+                  "quantity": { "type": "number", "example": 10 },
+                  "reserved": { "type": "number", "example": 0 },
+                  "vinList": { "type": "array", "items": { "type": "string" }, "example": ["VIN001234567890", "VIN001234567891"] },
+                  "location": { "type": "string", "example": "Warehouse A - Hanoi" }
+                },
+                "required": ["ownerType", "owner", "variant", "quantity"],
+                "example": {
+                  "ownerType": "Dealer",
+                  "owner": "68f90ebebeaef72ecf6e005a",
+                  "variant": "68f90ebebeaef72ecf6e005c",
+                  "color": "68f90ebebeaef72ecf6e005d",
+                  "quantity": 15,
+                  "reserved": 2,
+                  "vinList": ["VIN001234567890", "VIN001234567891", "VIN001234567892"],
+                  "location": "Warehouse A - Hanoi"
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Inventory created" } }
+      }
+    },
+    "/api/inventory/{id}": {
+      "put": {
+        "tags": ["Inventory"],
+        "summary": "Update inventory item",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "quantity": { "type": "number", "example": 15 },
+                  "reserved": { "type": "number", "example": 2 },
+                  "vinList": { "type": "array", "items": { "type": "string" } },
+                  "location": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Inventory updated" } }
+      },
+      "delete": {
+        "tags": ["Inventory"],
+        "summary": "Delete inventory item",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Inventory deleted" } }
+      }
+    },
+    "/api/promotions": {
+      "get": {
+        "tags": ["Promotions"],
+        "summary": "List promotions",
+        "responses": { "200": { "description": "Promotion list" } }
+      },
+      "post": {
+        "tags": ["Promotions"],
+        "summary": "Create promotion",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string", "example": "Summer Sale 2024" },
+                  "scope": { "type": "string", "enum": ["global", "byDealer", "byVariant"], "example": "byDealer" },
+                  "dealers": { "type": "array", "items": { "type": "string" }, "description": "Array of Dealer IDs", "example": ["68f90ebebeaef72ecf6e005a", "68f90ebebeaef72ecf6e005b"] },
+                  "variants": { "type": "array", "items": { "type": "string" }, "description": "Array of VehicleVariant IDs", "example": ["68f90ebebeaef72ecf6e005c", "68f90ebebeaef72ecf6e005d"] },
+                  "type": { "type": "string", "enum": ["cashback", "accessory", "finance"], "example": "cashback" },
+                  "value": { "type": "number", "example": 15, "description": "Percentage discount" },
+                  "stackable": { "type": "boolean", "example": false },
+                  "validFrom": { "type": "string", "format": "date", "example": "2024-06-01" },
+                  "validTo": { "type": "string", "format": "date", "example": "2024-08-31" },
+                  "status": { "type": "string", "enum": ["active", "inactive"], "example": "active" }
+                },
+                "required": ["name", "validFrom", "validTo"],
+                "example": {
+                  "name": "Summer Sale 2024 - VF8 Special",
+                  "scope": "byDealer",
+                  "dealers": ["68f90ebebeaef72ecf6e005a"],
+                  "variants": ["68f90ebebeaef72ecf6e005c"],
+                  "type": "cashback",
+                  "value": 15,
+                  "stackable": false,
+                  "validFrom": "2024-06-01",
+                  "validTo": "2024-08-31",
+                  "status": "active"
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Promotion created" } }
+      }
+    },
+    "/api/promotions/{id}": {
+      "put": {
+        "tags": ["Promotions"],
+        "summary": "Update promotion",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "scope": { "type": "string", "enum": ["global", "byDealer", "byVariant"] },
+                  "dealers": { "type": "array", "items": { "type": "string" } },
+                  "variants": { "type": "array", "items": { "type": "string" } },
+                  "type": { "type": "string", "enum": ["cashback", "accessory", "finance"] },
+                  "value": { "type": "number" },
+                  "stackable": { "type": "boolean" },
+                  "validFrom": { "type": "string", "format": "date" },
+                  "validTo": { "type": "string", "format": "date" },
+                  "status": { "type": "string", "enum": ["active", "inactive"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Promotion updated" } }
+      },
+      "delete": {
+        "tags": ["Promotions"],
+        "summary": "Delete promotion",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Promotion deleted" } }
+      }
+    },
+    "/api/customers": {
+      "get": {
+        "tags": ["Customers"],
+        "summary": "List customers",
+        "responses": { "200": { "description": "Customer list" } }
+      },
+      "post": {
+        "tags": ["Customers"],
+        "summary": "Create customer",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "fullName": { "type": "string", "example": "Nguyen Van A" },
+                  "email": { "type": "string", "example": "nguyenvana@gmail.com" },
+                  "phone": { "type": "string", "example": "0901234567" },
+                  "address": { "type": "string", "example": "123 Tran Hung Dao, Hoan Kiem, Hanoi" },
+                  "notes": { "type": "string", "example": "Very interested in VF8 Premium. Budget around 6.5 billion VND" }
+                },
+                "required": ["fullName", "phone"],
+                "example": {
+                  "fullName": "Nguyen Minh Khoa",
+                  "email": "khoa.nguyen@gmail.com",
+                  "phone": "0906789123",
+                  "address": "456 Le Loi Street, District 1, Ho Chi Minh City",
+                  "notes": "Interested in VF8 Premium, prefers white color, needs delivery within 2 months"
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Customer created" } }
+      }
+    },
+    "/api/customers/{id}": {
+      "get": {
+        "tags": ["Customers"],
+        "summary": "Get customer by ID",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Customer details" } }
+      },
+      "patch": {
+        "tags": ["Customers"],
+        "summary": "Update customer",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "fullName": { "type": "string" },
+                  "email": { "type": "string" },
+                  "phone": { "type": "string" },
+                  "address": { "type": "string" },
+                  "notes": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Customer updated" } }
+      },
+      "delete": {
+        "tags": ["Customers"],
+        "summary": "Delete customer",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Customer deleted" } }
+      }
+    },
+    "/api/test-drives": {
+      "get": {
+        "tags": ["TestDrives"],
+        "summary": "List test drives",
+        "responses": { "200": { "description": "Test drive list" } }
+      },
+      "post": {
+        "tags": ["TestDrives"],
+        "summary": "Create test drive",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "customer": { "type": "string", "description": "Customer ID", "example": "68f90ebebeaef72ecf6e005a" },
+                  "dealer": { "type": "string", "description": "Dealer ID", "example": "68f90ebebeaef72ecf6e005b" },
+                  "variant": { "type": "string", "description": "VehicleVariant ID", "example": "68f90ebebeaef72ecf6e005c" },
+                  "preferredTime": { "type": "string", "format": "date-time", "example": "2024-12-25T14:00:00Z" },
+                  "status": { "type": "string", "enum": ["pending", "confirmed", "done", "cancelled"], "example": "pending" },
+                  "assignedStaff": { "type": "string", "description": "User ID of assigned staff", "example": "68f90ebebeaef72ecf6e005d" },
+                  "result": {
+                    "type": "object",
+                    "properties": {
+                      "feedback": { "type": "string", "example": "Customer very satisfied with performance" },
+                      "interestRate": { "type": "number", "example": 90 }
+                    }
+                  }
+                },
+                "required": ["customer", "dealer", "variant", "preferredTime"],
+                "example": {
+                  "customer": "68f90ebebeaef72ecf6e005a",
+                  "dealer": "68f90ebebeaef72ecf6e005b",
+                  "variant": "68f90ebebeaef72ecf6e005c",
+                  "preferredTime": "2024-12-26T10:00:00Z",
+                  "status": "confirmed",
+                  "assignedStaff": "68f90ebebeaef72ecf6e005d"
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Test drive created" } }
+      }
+    },
+    "/api/test-drives/{id}": {
+      "get": {
+        "tags": ["TestDrives"],
+        "summary": "Get test drive by ID",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Test drive details" } }
+      },
+      "patch": {
+        "tags": ["TestDrives"],
+        "summary": "Update test drive",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "preferredTime": { "type": "string", "format": "date-time" },
+                  "status": { "type": "string", "enum": ["pending", "confirmed", "done", "cancelled"] },
+                  "assignedStaff": { "type": "string", "description": "User ID" },
+                  "result": {
+                    "type": "object",
+                    "properties": {
+                      "feedback": { "type": "string" },
+                      "interestRate": { "type": "number" }
+                    }
+                  }
+                },
+                "example": {
+                  "status": "done",
+                  "result": {
+                    "feedback": "Customer loved the autopilot feature and smooth acceleration",
+                    "interestRate": 95
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Test drive updated" } }
+      },
+      "delete": {
+        "tags": ["TestDrives"],
+        "summary": "Delete test drive",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Test drive deleted" } }
+      }
+    },
+    "/api/quotes": {
+      "get": {
+        "tags": ["Quotes"],
+        "summary": "List quotes",
+        "responses": { "200": { "description": "Quote list" } }
+      },
+      "post": {
+        "tags": ["Quotes"],
+        "summary": "Create quote",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "customer": { "type": "string", "description": "Customer ID", "example": "68f90ebebeaef72ecf6e005a" },
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "variant": { "type": "string", "description": "VehicleVariant ID" },
+                        "color": { "type": "string", "description": "VehicleColor ID" },
+                        "qty": { "type": "number", "example": 1 },
+                        "unitPrice": { "type": "number", "example": 6500000000 }
+                      }
+                    }
+                  },
+                  "subtotal": { "type": "number", "example": 6500000000 },
+                  "discount": { "type": "number", "example": 650000000 },
+                  "total": { "type": "number", "example": 5850000000 },
+                  "validUntil": { "type": "string", "format": "date", "example": "2024-12-31" },
+                  "notes": { "type": "string", "example": "Special discount for VIP customer - 10% off" }
+                },
+                "required": ["customer", "items"],
+                "example": {
+                  "customer": "68f90ebebeaef72ecf6e005a",
+                  "items": [
+                    {
+                      "variant": "68f90ebebeaef72ecf6e005c",
+                      "color": "68f90ebebeaef72ecf6e005d",
+                      "qty": 1,
+                      "unitPrice": 6500000000
+                    }
+                  ],
+                  "subtotal": 6500000000,
+                  "discount": 650000000,
+                  "total": 5850000000,
+                  "validUntil": "2024-12-31",
+                  "notes": "VF8 Premium in Pearl White - Summer promotion 10% discount applied"
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Quote created" } }
+      }
+    },
+    "/api/quotes/{id}": {
+      "get": {
+        "tags": ["Quotes"],
+        "summary": "Get quote by ID",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Quote details" } }
+      },
+      "patch": {
+        "tags": ["Quotes"],
+        "summary": "Update quote",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": { "type": "string", "enum": ["draft", "sent", "accepted", "rejected"] },
+                  "subtotal": { "type": "number" },
+                  "discount": { "type": "number" },
+                  "total": { "type": "number" },
+                  "validUntil": { "type": "string", "format": "date" },
+                  "notes": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Quote updated" } }
+      },
+      "delete": {
+        "tags": ["Quotes"],
+        "summary": "Delete quote",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Quote deleted" } }
+      }
+    },
+    "/api/orders": {
+      "get": {
+        "tags": ["Orders"],
+        "summary": "List orders",
+        "responses": { "200": { "description": "Order list" } }
+      },
+      "post": {
+        "tags": ["Orders"],
+        "summary": "Create order",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "customer": { "type": "string", "description": "Customer ID", "example": "68f90ebebeaef72ecf6e005a" },
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "variant": { "type": "string", "description": "VehicleVariant ID" },
+                        "color": { "type": "string", "description": "VehicleColor ID" },
+                        "qty": { "type": "number", "example": 1 },
+                        "unitPrice": { "type": "number", "example": 6500000000 }
+                      }
+                    }
+                  },
+                  "paymentMethod": { "type": "string", "enum": ["cash", "finance"], "example": "finance" },
+                  "deposit": { "type": "number", "example": 1950000000, "description": "30% deposit for finance" }
+                },
+                "required": ["customer", "items"],
+                "example": {
+                  "customer": "68f90ebebeaef72ecf6e005a",
+                  "items": [
+                    {
+                      "variant": "68f90ebebeaef72ecf6e005c",
+                      "color": "68f90ebebeaef72ecf6e005d",
+                      "qty": 1,
+                      "unitPrice": 6500000000
+                    }
+                  ],
+                  "paymentMethod": "finance",
+                  "deposit": 1950000000
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Order created" } }
+      }
+    },
+    "/api/orders/{id}": {
+      "get": {
+        "tags": ["Orders"],
+        "summary": "Get order by ID",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Order details" } }
+      },
+      "patch": {
+        "tags": ["Orders"],
+        "summary": "Update order",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": { "type": "string", "enum": ["new", "confirmed", "allocated", "invoiced", "delivered", "cancelled"] },
+                  "paymentMethod": { "type": "string", "enum": ["cash", "finance"] },
+                  "deposit": { "type": "number" },
+                  "actualDelivery": { "type": "string", "format": "date" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Order updated" } }
+      },
+      "delete": {
+        "tags": ["Orders"],
+        "summary": "Delete order",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Order deleted" } }
+      }
+    },
+    "/api/contracts": {
+      "get": {
+        "tags": ["Contracts"],
+        "summary": "List contracts",
+        "responses": { "200": { "description": "Contract list" } }
+      },
+      "post": {
+        "tags": ["Contracts"],
+        "summary": "Create contract",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "dealer": { "type": "string", "description": "Dealer ID", "example": "68f90ebebeaef72ecf6e005a" },
+                  "startDate": { "type": "string", "format": "date", "example": "2024-01-01" },
+                  "endDate": { "type": "string", "format": "date", "example": "2026-12-31" },
+                  "targets": { "type": "string", "example": "Annual sales target: 150 units, Revenue: 900 billion VND" },
+                  "discountPolicyRef": { "type": "string", "example": "POL-2024-HN-001" },
+                  "status": { "type": "string", "enum": ["draft", "active", "expired", "terminated"], "example": "active" }
+                },
+                "required": ["dealer", "startDate", "endDate"],
+                "example": {
+                  "dealer": "68f90ebebeaef72ecf6e005a",
+                  "startDate": "2024-01-01",
+                  "endDate": "2026-12-31",
+                  "targets": "Annual sales target: 120 units VF8, Revenue target: 780 billion VND",
+                  "discountPolicyRef": "POL-2024-HN-001",
+                  "status": "active"
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Contract created" } }
+      }
+    },
+    "/api/contracts/{id}": {
+      "get": {
+        "tags": ["Contracts"],
+        "summary": "Get contract by ID",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Contract details" } }
+      },
+      "patch": {
+        "tags": ["Contracts"],
+        "summary": "Update contract",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "startDate": { "type": "string", "format": "date" },
+                  "endDate": { "type": "string", "format": "date" },
+                  "targets": { "type": "string" },
+                  "discountPolicyRef": { "type": "string" },
+                  "status": { "type": "string", "enum": ["draft", "active", "expired", "terminated"] }
+                },
+                "example": {
+                  "targets": "Updated annual target: 150 units, Revenue: 975 billion VND",
+                  "status": "active"
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Contract updated" } }
+      },
+      "delete": {
+        "tags": ["Contracts"],
+        "summary": "Delete contract",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Contract deleted" } }
+      }
+    },
+    "/api/payments": {
+      "get": {
+        "tags": ["Payments"],
+        "summary": "List payments",
+        "responses": { "200": { "description": "Payment list" } }
+      },
+      "post": {
+        "tags": ["Payments"],
+        "summary": "Create payment",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "order": { "type": "string", "description": "Order ID", "example": "68f90ebebeaef72ecf6e005a" },
+                  "type": { "type": "string", "enum": ["deposit", "balance", "installment"], "example": "deposit" },
+                  "amount": { "type": "number", "example": 1950000000 },
+                  "method": { "type": "string", "enum": ["cash", "bank", "card"], "example": "bank" },
+                  "transactionRef": { "type": "string", "example": "TXN-2024-001234" },
+                  "paidAt": { "type": "string", "format": "date-time", "example": "2024-12-20T10:30:00Z" },
+                  "status": { "type": "string", "enum": ["pending", "confirmed", "failed"], "example": "confirmed" },
+                  "notes": { "type": "string", "example": "30% deposit payment via bank transfer" }
+                },
+                "required": ["order", "type", "amount", "method"],
+                "example": {
+                  "order": "68f90ebebeaef72ecf6e005a",
+                  "type": "deposit",
+                  "amount": 1950000000,
+                  "method": "bank",
+                  "transactionRef": "TXN-2024-001234",
+                  "paidAt": "2024-12-20T10:30:00Z",
+                  "status": "confirmed",
+                  "notes": "30% deposit for VF8 Premium - Customer: Nguyen Minh Khoa"
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Payment created" } }
+      }
+    },
+    "/api/payments/{id}": {
+      "get": {
+        "tags": ["Payments"],
+        "summary": "Get payment by ID",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Payment details" } }
+      },
+      "patch": {
+        "tags": ["Payments"],
+        "summary": "Update payment",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": { "type": "string", "enum": ["pending", "confirmed", "failed"] },
+                  "transactionRef": { "type": "string" },
+                  "paidAt": { "type": "string", "format": "date-time" },
+                  "notes": { "type": "string" }
+                },
+                "example": {
+                  "status": "confirmed",
+                  "transactionRef": "TXN-2024-001234-CONFIRMED",
+                  "notes": "Payment verified and confirmed by bank"
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Payment updated" } }
+      },
+      "delete": {
+        "tags": ["Payments"],
+        "summary": "Delete payment",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Payment deleted" } }
+      }
+    },
+    "/api/dealers": {
+      "get": {
+        "tags": ["Dealers"],
+        "summary": "List dealers",
+        "responses": { "200": { "description": "Dealer list" } }
+      },
+      "post": {
+        "tags": ["Dealers"],
+        "summary": "Create dealer",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string", "example": "Hanoi EV Premium Dealer" },
+                  "code": { "type": "string", "example": "HAN002" },
+                  "region": { "type": "string", "example": "North" },
+                  "address": { "type": "string", "example": "789 Lang Ha Street, Dong Da District, Hanoi" },
+                  "contacts": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": { "type": "string", "example": "Nguyen Van Manager" },
+                        "phone": { "type": "string", "example": "0904567890" },
+                        "email": { "type": "string", "example": "manager@hanoievdealer.com" }
+                      }
+                    },
+                    "example": [
+                      {
+                        "name": "Nguyen Van Manager",
+                        "phone": "0904567890",
+                        "email": "manager@hanoievdealer.com"
+                      },
+                      {
+                        "name": "Tran Thi Sales",
+                        "phone": "0905678901",
+                        "email": "sales@hanoievdealer.com"
+                      }
+                    ]
+                  },
+                  "creditLimit": { "type": "number", "example": 1500000000 },
+                  "status": { "type": "string", "enum": ["active", "inactive"], "example": "active" }
+                },
+                "required": ["name", "code"],
+                "example": {
+                  "name": "Hai Phong EV Dealer",
+                  "code": "HP001",
+                  "region": "North",
+                  "address": "456 Tran Phu Street, Hong Bang, Hai Phong",
+                  "contacts": [
+                    {
+                      "name": "Le Van Director",
+                      "phone": "0907890123",
+                      "email": "director@haiphongevdealer.com"
+                    }
+                  ],
+                  "creditLimit": 1200000000,
+                  "status": "active"
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Dealer created" } }
+      }
+    },
+    "/api/dealers/{id}": {
+      "get": {
+        "tags": ["Dealers"],
+        "summary": "Get dealer by ID",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Dealer details" } }
+      },
+      "patch": {
+        "tags": ["Dealers"],
+        "summary": "Update dealer",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "code": { "type": "string" },
+                  "region": { "type": "string" },
+                  "address": { "type": "string" },
+                  "contacts": { "type": "array", "items": { "type": "object" } },
+                  "creditLimit": { "type": "number" },
+                  "status": { "type": "string", "enum": ["active", "inactive"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Dealer updated" } }
+      },
+      "delete": {
+        "tags": ["Dealers"],
+        "summary": "Delete dealer",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Dealer deleted" } }
+      }
+    },
+    "/api/reports/sales": {
+      "get": {
+        "tags": ["Reports"],
+        "summary": "Sales report",
+        "description": "Get sales report by date range and dealer",
+        "parameters": [
+          { "name": "startDate", "in": "query", "schema": { "type": "string", "format": "date" } },
+          { "name": "endDate", "in": "query", "schema": { "type": "string", "format": "date" } },
+          { "name": "dealerId", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Sales report data" } }
+      }
+    },
+    "/api/reports/inventory": {
+      "get": {
+        "tags": ["Reports"],
+        "summary": "Inventory report",
+        "description": "Get inventory report with low stock alerts",
+        "responses": { "200": { "description": "Inventory report data" } }
+      }
+    },
+    "/api/reports/debt": {
+      "get": {
+        "tags": ["Reports"],
+        "summary": "Debt report",
+        "description": "Get dealer debt report",
+        "responses": { "200": { "description": "Debt report data" } }
+      }
+    },
+    "/api/vehicle-models": {
+      "get": {
+        "tags": ["Vehicles"],
+        "summary": "List vehicle models",
+        "responses": { "200": { "description": "Vehicle model list" } }
+      },
+      "post": {
+        "tags": ["Vehicles"],
+        "summary": "Create vehicle model",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string", "example": "VF8" },
+                  "brand": { "type": "string", "example": "EVM" },
+                  "segment": { "type": "string", "example": "Mid-size" },
+                  "description": { "type": "string", "example": "Premium electric SUV with advanced features" },
+                  "active": { "type": "boolean", "example": true }
+                },
+                "required": ["name"],
+                "example": {
+                  "name": "VF9",
+                  "brand": "EVM",
+                  "segment": "Full-size",
+                  "description": "Luxury 7-seater electric SUV",
+                  "active": true
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Vehicle model created" } }
+      }
+    },
+    "/api/vehicle-models/{id}": {
+      "get": {
+        "tags": ["Vehicles"],
+        "summary": "Get vehicle model by ID",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Vehicle model details" } }
+      },
+      "patch": {
+        "tags": ["Vehicles"],
+        "summary": "Update vehicle model",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "brand": { "type": "string" },
+                  "segment": { "type": "string" },
+                  "description": { "type": "string" },
+                  "active": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Vehicle model updated" } }
+      },
+      "delete": {
+        "tags": ["Vehicles"],
+        "summary": "Delete vehicle model",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Vehicle model deleted" } }
+      }
+    },
+    "/api/vehicle-colors": {
+      "get": {
+        "tags": ["Vehicles"],
+        "summary": "List vehicle colors",
+        "responses": { "200": { "description": "Vehicle color list" } }
+      },
+      "post": {
+        "tags": ["Vehicles"],
+        "summary": "Create vehicle color",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string", "example": "Pearl White" },
+                  "code": { "type": "string", "example": "PW" },
+                  "hex": { "type": "string", "example": "#FFFFFF" },
+                  "extraPrice": { "type": "number", "example": 0 },
+                  "active": { "type": "boolean", "example": true }
+                },
+                "required": ["name"],
+                "example": {
+                  "name": "Midnight Black",
+                  "code": "MB",
+                  "hex": "#000000",
+                  "extraPrice": 0,
+                  "active": true
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Vehicle color created" } }
+      }
+    },
+    "/api/vehicle-colors/{id}": {
+      "get": {
+        "tags": ["Vehicles"],
+        "summary": "Get vehicle color by ID",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Vehicle color details" } }
+      },
+      "patch": {
+        "tags": ["Vehicles"],
+        "summary": "Update vehicle color",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "code": { "type": "string" },
+                  "hex": { "type": "string" },
+                  "extraPrice": { "type": "number" },
+                  "active": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Vehicle color updated" } }
+      },
+      "delete": {
+        "tags": ["Vehicles"],
+        "summary": "Delete vehicle color",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Vehicle color deleted" } }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}
