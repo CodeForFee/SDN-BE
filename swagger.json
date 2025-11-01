@@ -316,12 +316,203 @@
     "/api/vehicles/compare": {
       "get": {
         "tags": ["VehicleVariants"],
-        "summary": "So sánh 2–3 phiên bản xe",
-        "description": "Truyền danh sách id biến thể qua query 'ids', phân tách dấu phẩy",
+        "summary": "So sánh nhiều phiên bản xe (GET)",
+        "description": "So sánh nhiều xe bằng query parameter. Tối thiểu 2 xe, không giới hạn tối đa. Truyền danh sách id biến thể qua query 'ids', phân tách dấu phẩy",
         "parameters": [
-          { "name": "ids", "in": "query", "required": true, "schema": { "type": "string" }, "example": "68f90e...005c,68f90e...005e" }
+          { 
+            "name": "ids", 
+            "in": "query", 
+            "required": true, 
+            "schema": { "type": "string" }, 
+            "example": "68f90e...005c,68f90e...005e,68f90e...005f",
+            "description": "Danh sách ID của các xe cần so sánh, phân tách bởi dấu phẩy"
+          }
         ],
-        "responses": { "200": { "description": "Danh sách biến thể để so sánh" }, "400": { "description": "Thiếu hoặc sai tham số" } }
+        "responses": { 
+          "200": { 
+            "description": "So sánh thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": { "type": "string", "example": "So sánh 3 xe thành công" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "count": { "type": "number", "example": 3 },
+                        "vehicles": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "_id": { "type": "string" },
+                              "model": {
+                                "type": "object",
+                                "properties": {
+                                  "_id": { "type": "string" },
+                                  "name": { "type": "string" },
+                                  "brand": { "type": "string" },
+                                  "segment": { "type": "string" },
+                                  "description": { "type": "string" }
+                                }
+                              },
+                              "trim": { "type": "string" },
+                              "battery": { "type": "string" },
+                              "range": { "type": "number" },
+                              "motorPower": { "type": "number" },
+                              "features": { "type": "array", "items": { "type": "string" } },
+                              "msrp": { "type": "number" },
+                              "images": { "type": "array", "items": { "type": "string" } },
+                              "active": { "type": "boolean" }
+                            }
+                          }
+                        },
+                        "comparison": {
+                          "type": "object",
+                          "properties": {
+                            "models": { "type": "array", "items": { "type": "string" } },
+                            "trims": { "type": "array", "items": { "type": "string" } },
+                            "priceRange": {
+                              "type": "object",
+                              "properties": {
+                                "min": { "type": "number" },
+                                "max": { "type": "number" }
+                              }
+                            },
+                            "rangeRange": {
+                              "type": "object",
+                              "properties": {
+                                "min": { "type": "number" },
+                                "max": { "type": "number" }
+                              }
+                            },
+                            "motorPowerRange": {
+                              "type": "object",
+                              "properties": {
+                                "min": { "type": "number" },
+                                "max": { "type": "number" }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }, 
+          "400": { "description": "Thiếu hoặc sai tham số (cần ít nhất 2 xe)" },
+          "404": { "description": "Không tìm thấy một hoặc nhiều xe" }
+        }
+      },
+      "post": {
+        "tags": ["VehicleVariants"],
+        "summary": "So sánh nhiều phiên bản xe (POST - JSON)",
+        "description": "So sánh nhiều xe bằng JSON body. Tối thiểu 2 xe, không giới hạn tối đa. Gửi mảng IDs trong request body.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ids": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "minItems": 2,
+                    "description": "Danh sách ID của các xe cần so sánh"
+                  }
+                },
+                "required": ["ids"],
+                "example": {
+                  "ids": ["68f90e...005c", "68f90e...005e", "68f90e...005f"]
+                }
+              }
+            }
+          }
+        },
+        "responses": { 
+          "200": { 
+            "description": "So sánh thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": { "type": "string", "example": "So sánh 3 xe thành công" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "count": { "type": "number", "example": 3 },
+                        "vehicles": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "_id": { "type": "string" },
+                              "model": {
+                                "type": "object",
+                                "properties": {
+                                  "_id": { "type": "string" },
+                                  "name": { "type": "string" },
+                                  "brand": { "type": "string" },
+                                  "segment": { "type": "string" },
+                                  "description": { "type": "string" }
+                                }
+                              },
+                              "trim": { "type": "string" },
+                              "battery": { "type": "string" },
+                              "range": { "type": "number" },
+                              "motorPower": { "type": "number" },
+                              "features": { "type": "array", "items": { "type": "string" } },
+                              "msrp": { "type": "number" },
+                              "images": { "type": "array", "items": { "type": "string" } },
+                              "active": { "type": "boolean" }
+                            }
+                          }
+                        },
+                        "comparison": {
+                          "type": "object",
+                          "properties": {
+                            "models": { "type": "array", "items": { "type": "string" } },
+                            "trims": { "type": "array", "items": { "type": "string" } },
+                            "priceRange": {
+                              "type": "object",
+                              "properties": {
+                                "min": { "type": "number" },
+                                "max": { "type": "number" }
+                              }
+                            },
+                            "rangeRange": {
+                              "type": "object",
+                              "properties": {
+                                "min": { "type": "number" },
+                                "max": { "type": "number" }
+                              }
+                            },
+                            "motorPowerRange": {
+                              "type": "object",
+                              "properties": {
+                                "min": { "type": "number" },
+                                "max": { "type": "number" }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }, 
+          "400": { "description": "Thiếu hoặc sai tham số (cần ít nhất 2 xe)" },
+          "404": { "description": "Không tìm thấy một hoặc nhiều xe" }
+        }
       }
     },
     "/api/vehicles/{id}": {
@@ -976,6 +1167,75 @@
       }
     },
     "/api/payments": {
+      "get": {
+        "tags": ["Payments"],
+        "summary": "Liệt kê thanh toán (có phân trang)",
+        "description": "Lấy danh sách tất cả thanh toán với phân trang. Admin xem tất cả, DealerStaff/DealerManager chỉ xem thanh toán của dealer mình.",
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 }, "description": "Số trang" },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 10 }, "description": "Số lượng mục mỗi trang" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Danh sách thanh toán",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "_id": { "type": "string" },
+                          "order": {
+                            "type": "object",
+                            "properties": {
+                              "_id": { "type": "string" },
+                              "orderNo": { "type": "string" },
+                              "dealer": { "type": "string" },
+                              "customer": {
+                                "type": "object",
+                                "properties": {
+                                  "_id": { "type": "string" },
+                                  "fullName": { "type": "string" },
+                                  "phone": { "type": "string" }
+                                }
+                              }
+                            }
+                          },
+                          "type": { "type": "string", "enum": ["deposit", "balance", "installment"] },
+                          "amount": { "type": "number" },
+                          "method": { "type": "string", "enum": ["cash", "bank", "card"] },
+                          "transactionRef": { "type": "string" },
+                          "paidAt": { "type": "string", "format": "date-time" },
+                          "status": { "type": "string", "enum": ["pending", "confirmed", "failed"] },
+                          "notes": { "type": "string" },
+                          "createdAt": { "type": "string", "format": "date-time" },
+                          "updatedAt": { "type": "string", "format": "date-time" }
+                        }
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "page": { "type": "integer" },
+                        "limit": { "type": "integer" },
+                        "total": { "type": "integer" },
+                        "pages": { "type": "integer" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Tài khoản đại lý chưa được liên kết với đại lý nào" },
+          "500": { "description": "Server error" }
+        }
+      },
       "post": {
         "tags": ["Payments"],
         "summary": "Tạo thanh toán",

@@ -173,3 +173,5 @@ Mỗi model bên dưới là Mongoose schema, FE có thể dựa vào để map 
 - Các mảng ref (VD: `variants` trong Promotion, `items` trong Order/Quote) gửi dạng mảng ObjectId hoặc object chi tiết tùy API.
 
 
+
+
