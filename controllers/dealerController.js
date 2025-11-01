@@ -1,4 +1,5 @@
 const Dealer = require("../models/Dealer");
+const Inventory = require("../models/Inventory");
 
 exports.getDealers = async (req, res) => {
   try {
@@ -36,6 +37,16 @@ exports.createDealer = async (req, res) => {
       message: "Create new dealer successfully",
       data: createDealer,
     });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getDealerById = async (req, res) => {
+  try {
+    const dealer = await Dealer.findById(req.params.id);
+    if (!dealer) return res.status(404).json({ message: 'Dealer not found' });
+    res.status(200).json(dealer);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -84,6 +95,43 @@ exports.deleteDealer = async (req, res) => {
       message: "Delete dealer successfully",
       data: dealer,
     });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// GET /api/dealers/:id/inventory
+exports.getDealerInventory = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const dealer = await Dealer.findById(id);
+    if (!dealer) return res.status(404).json({ message: "Dealer not found" });
+
+    const items = await Inventory.find({ owner: id, ownerType: 'Dealer' })
+      .populate('variant', 'trim msrp')
+      .populate('color', 'name code');
+
+    res.status(200).json({ success: true, count: items.length, data: items });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// PUT /api/dealers/:id/target
+exports.updateDealerTarget = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { salesTarget } = req.body;
+    if (salesTarget === undefined) {
+      return res.status(400).json({ message: "'salesTarget' is required" });
+    }
+    const dealer = await Dealer.findByIdAndUpdate(
+      id,
+      { salesTarget },
+      { new: true, runValidators: true }
+    );
+    if (!dealer) return res.status(404).json({ message: 'Dealer not found' });
+    res.status(200).json({ message: 'Updated sales target', data: dealer });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

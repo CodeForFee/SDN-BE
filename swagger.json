@@ -12,7 +12,9 @@
   "security": [{ "bearerAuth": [] }],
   "tags": [
     { "name": "Auth", "description": "Authentication endpoints - Role: Admin, DealerManager" },
-    { "name": "Vehicles", "description": "Vehicle management (models, variants, colors) - Role: EVMStaff, Admin" },
+    { "name": "VehicleModels", "description": "Vehicle model management - Role: EVMStaff, Admin" },
+    { "name": "VehicleVariants", "description": "Vehicle variant management - Role: EVMStaff, Admin" },
+    { "name": "VehicleColors", "description": "Vehicle color management - Role: EVMStaff, Admin" },
     { "name": "Inventory", "description": "Inventory management - Role: DealerStaff (read), DealerManager, EVMStaff, Admin" },
     { "name": "Promotions", "description": "Promotion management - Role: DealerStaff (read), EVMStaff, Admin" },
     { "name": "Customers", "description": "Customer management - Role: DealerStaff, DealerManager, Admin" },
@@ -22,14 +24,18 @@
     { "name": "Contracts", "description": "Contract management - Role: DealerStaff, DealerManager, Admin" },
     { "name": "Payments", "description": "Payment management - Role: DealerStaff, DealerManager, Admin" },
     { "name": "Dealers", "description": "Dealer management - Role: DealerManager, EVMStaff, Admin" },
-    { "name": "Reports", "description": "Reports and analytics - Role: DealerManager, EVMStaff, Admin" }
+    { "name": "Reports", "description": "Reports and analytics - Role: DealerManager, EVMStaff, Admin" },
+    { "name": "Deliveries", "description": "Quản lý giao xe - DealerStaff tạo, DealerManager cập nhật" },
+    { "name": "Feedbacks", "description": "Phản hồi khách hàng - DealerStaff tạo, DealerManager xem/cập nhật" },
+    { "name": "Dashboard", "description": "Tổng quan hệ thống" },
+    { "name": "Users", "description": "Quản trị tài khoản" }
   ],
   "paths": {
     "/api/auth/login": {
       "post": {
         "tags": ["Auth"],
-        "summary": "User login",
-        "description": "Login with email and password. Returns access token and refresh token.",
+        "summary": "Đăng nhập người dùng",
+        "description": "Đăng nhập bằng email và mật khẩu. Trả về access token và refresh token.",
         "requestBody": {
           "required": true,
           "content": {
@@ -80,8 +86,8 @@
     "/api/auth/refresh": {
       "post": {
         "tags": ["Auth"],
-        "summary": "Refresh access token",
-        "description": "Generate new access and refresh tokens using valid refresh token",
+        "summary": "Làm mới access token",
+        "description": "Tạo mới access token và refresh token từ refresh token hợp lệ",
         "requestBody": {
           "required": true,
           "content": {
@@ -135,8 +141,8 @@
     "/api/auth/register": {
       "post": {
         "tags": ["Auth"],
-        "summary": "Register new user (Admin & DealerManager)",
-        "description": "Create a new user account - Role Required: Admin or DealerManager (DealerManager can only create DealerStaff)",
+        "summary": "Tạo tài khoản người dùng (Admin & DealerManager)",
+        "description": "Tạo tài khoản người dùng mới - Yêu cầu quyền: Admin hoặc DealerManager (DealerManager chỉ được tạo DealerStaff)",
         "requestBody": {
           "required": true,
           "content": {
@@ -204,8 +210,8 @@
     "/api/auth/me": {
       "get": {
         "tags": ["Auth"],
-        "summary": "Get current user profile",
-        "description": "Returns the authenticated user's profile information",
+        "summary": "Lấy thông tin người dùng hiện tại",
+        "description": "Trả về thông tin hồ sơ của người dùng đã xác thực",
         "responses": {
           "200": { 
             "description": "User profile",
@@ -240,8 +246,8 @@
     "/api/auth/logout": {
       "post": {
         "tags": ["Auth"],
-        "summary": "Logout user",
-        "description": "Logout the authenticated user. Client should remove tokens from localStorage/cookie.",
+        "summary": "Đăng xuất",
+        "description": "Đăng xuất người dùng đã đăng nhập. Client nên xóa token khỏi localStorage/cookie.",
         "responses": {
           "200": {
             "description": "Logout successful",
@@ -264,13 +270,13 @@
     },
     "/api/vehicles": {
       "get": {
-        "tags": ["Vehicles"],
-        "summary": "List all vehicle variants",
+        "tags": ["VehicleVariants"],
+        "summary": "Liệt kê tất cả phiên bản xe (variants)",
         "responses": { "200": { "description": "List of vehicle variants" } }
       },
       "post": {
-        "tags": ["Vehicles"],
-        "summary": "Create new vehicle variant",
+        "tags": ["VehicleVariants"],
+        "summary": "Tạo phiên bản xe (variant) mới",
         "requestBody": {
           "required": true,
           "content": {
@@ -307,16 +313,27 @@
         "responses": { "201": { "description": "Vehicle variant created" } }
       }
     },
+    "/api/vehicles/compare": {
+      "get": {
+        "tags": ["VehicleVariants"],
+        "summary": "So sánh 2–3 phiên bản xe",
+        "description": "Truyền danh sách id biến thể qua query 'ids', phân tách dấu phẩy",
+        "parameters": [
+          { "name": "ids", "in": "query", "required": true, "schema": { "type": "string" }, "example": "68f90e...005c,68f90e...005e" }
+        ],
+        "responses": { "200": { "description": "Danh sách biến thể để so sánh" }, "400": { "description": "Thiếu hoặc sai tham số" } }
+      }
+    },
     "/api/vehicles/{id}": {
       "get": {
-        "tags": ["Vehicles"],
-        "summary": "Get vehicle variant by ID",
+        "tags": ["VehicleVariants"],
+        "summary": "Lấy chi tiết phiên bản xe theo ID",
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
         "responses": { "200": { "description": "Vehicle variant details" } }
       },
       "put": {
-        "tags": ["Vehicles"],
-        "summary": "Update vehicle variant",
+        "tags": ["VehicleVariants"],
+        "summary": "Cập nhật phiên bản xe",
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
         "requestBody": {
           "required": true,
@@ -341,8 +358,8 @@
         "responses": { "200": { "description": "Vehicle variant updated" } }
       },
       "delete": {
-        "tags": ["Vehicles"],
-        "summary": "Delete vehicle variant",
+        "tags": ["VehicleVariants"],
+        "summary": "Xóa phiên bản xe",
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
         "responses": { "200": { "description": "Vehicle variant deleted" } }
       }
@@ -350,12 +367,12 @@
     "/api/inventory": {
       "get": {
         "tags": ["Inventory"],
-        "summary": "Get inventory (dealer-specific or global)",
+        "summary": "Lấy tồn kho (theo đại lý hoặc tổng)",
         "responses": { "200": { "description": "Inventory list" } }
       },
       "post": {
         "tags": ["Inventory"],
-        "summary": "Create inventory item",
+        "summary": "Tạo mục tồn kho",
         "requestBody": {
           "required": true,
           "content": {
@@ -388,6 +405,22 @@
           }
         },
         "responses": { "201": { "description": "Inventory created" } }
+      }
+    },
+    "/api/inventory/dealer/{dealerId}": {
+      "get": {
+        "tags": ["Inventory"],
+        "summary": "Lấy tồn kho theo đại lý",
+        "parameters": [{ "name": "dealerId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Danh sách tồn kho của đại lý" } }
+      }
+    },
+    "/api/inventory/transfer": {
+      "post": {
+        "tags": ["Inventory"],
+        "summary": "Điều phối xe giữa các đại lý",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "variant": { "type": "string" }, "color": { "type": "string" }, "fromDealerId": { "type": "string" }, "toDealerId": { "type": "string" }, "quantity": { "type": "number" } }, "required": ["variant", "fromDealerId", "toDealerId", "quantity"], "example": { "variant": "68f9...005c", "color": "68f9...005d", "fromDealerId": "68f9...00aa", "toDealerId": "68f9...00bb", "quantity": 2 } } } } },
+        "responses": { "200": { "description": "Kết quả điều phối" } }
       }
     },
     "/api/inventory/{id}": {
@@ -429,12 +462,12 @@
     "/api/promotions": {
       "get": {
         "tags": ["Promotions"],
-        "summary": "List promotions",
+        "summary": "Liệt kê khuyến mãi",
         "responses": { "200": { "description": "Promotion list" } }
       },
       "post": {
         "tags": ["Promotions"],
-        "summary": "Create promotion",
+        "summary": "Tạo khuyến mãi",
         "requestBody": {
           "required": true,
           "content": {
@@ -476,7 +509,7 @@
     "/api/promotions/{id}": {
       "put": {
         "tags": ["Promotions"],
-        "summary": "Update promotion",
+        "summary": "Cập nhật khuyến mãi",
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
         "requestBody": {
           "required": true,
@@ -504,7 +537,7 @@
       },
       "delete": {
         "tags": ["Promotions"],
-        "summary": "Delete promotion",
+        "summary": "Xóa khuyến mãi",
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
         "responses": { "200": { "description": "Promotion deleted" } }
       }
@@ -512,12 +545,12 @@
     "/api/customers": {
       "get": {
         "tags": ["Customers"],
-        "summary": "List customers",
+        "summary": "Liệt kê khách hàng",
         "responses": { "200": { "description": "Customer list" } }
       },
       "post": {
         "tags": ["Customers"],
-        "summary": "Create customer",
+        "summary": "Tạo khách hàng",
         "requestBody": {
           "required": true,
           "content": {
@@ -549,13 +582,13 @@
     "/api/customers/{id}": {
       "get": {
         "tags": ["Customers"],
-        "summary": "Get customer by ID",
+        "summary": "Lấy chi tiết khách hàng theo ID",
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
         "responses": { "200": { "description": "Customer details" } }
       },
       "patch": {
         "tags": ["Customers"],
-        "summary": "Update customer",
+        "summary": "Cập nhật khách hàng",
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
         "requestBody": {
           "required": true,
@@ -578,7 +611,7 @@
       },
       "delete": {
         "tags": ["Customers"],
-        "summary": "Delete customer",
+        "summary": "Xóa khách hàng",
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
         "responses": { "200": { "description": "Customer deleted" } }
       }
@@ -586,12 +619,12 @@
     "/api/test-drives": {
       "get": {
         "tags": ["TestDrives"],
-        "summary": "List test drives",
+        "summary": "Liệt kê lịch lái thử",
         "responses": { "200": { "description": "Test drive list" } }
       },
       "post": {
         "tags": ["TestDrives"],
-        "summary": "Create test drive",
+        "summary": "Tạo lịch lái thử",
         "requestBody": {
           "required": true,
           "content": {
@@ -632,13 +665,13 @@
     "/api/test-drives/{id}": {
       "get": {
         "tags": ["TestDrives"],
-        "summary": "Get test drive by ID",
+        "summary": "Lấy chi tiết lịch lái thử theo ID",
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
         "responses": { "200": { "description": "Test drive details" } }
       },
       "patch": {
         "tags": ["TestDrives"],
-        "summary": "Update test drive",
+        "summary": "Cập nhật lịch lái thử",
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
         "requestBody": {
           "required": true,
@@ -673,7 +706,7 @@
       },
       "delete": {
         "tags": ["TestDrives"],
-        "summary": "Delete test drive",
+        "summary": "Xóa lịch lái thử",
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
         "responses": { "200": { "description": "Test drive deleted" } }
       }
@@ -681,12 +714,12 @@
     "/api/quotes": {
       "get": {
         "tags": ["Quotes"],
-        "summary": "List quotes",
+        "summary": "Liệt kê báo giá",
         "responses": { "200": { "description": "Quote list" } }
       },
       "post": {
         "tags": ["Quotes"],
-        "summary": "Create quote",
+        "summary": "Tạo báo giá",
         "requestBody": {
           "required": true,
           "content": {
@@ -740,13 +773,13 @@
     "/api/quotes/{id}": {
       "get": {
         "tags": ["Quotes"],
-        "summary": "Get quote by ID",
+        "summary": "Lấy chi tiết báo giá theo ID",
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
         "responses": { "200": { "description": "Quote details" } }
       },
       "patch": {
         "tags": ["Quotes"],
-        "summary": "Update quote",
+        "summary": "Cập nhật báo giá",
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
         "requestBody": {
           "required": true,
@@ -770,20 +803,21 @@
       },
       "delete": {
         "tags": ["Quotes"],
-        "summary": "Delete quote",
+        "summary": "Xóa báo giá",
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
         "responses": { "200": { "description": "Quote deleted" } }
       }
     },
+    "/api/quotes/{id}/convert": { "put": { "tags": ["Quotes"], "summary": "Chuyển báo giá thành đơn hàng", "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "Đã tạo đơn hàng từ báo giá" } } } },
     "/api/orders": {
       "get": {
         "tags": ["Orders"],
-        "summary": "List orders",
+        "summary": "Liệt kê đơn hàng",
         "responses": { "200": { "description": "Order list" } }
       },
       "post": {
         "tags": ["Orders"],
-        "summary": "Create order",
+        "summary": "Tạo đơn hàng",
         "requestBody": {
           "required": true,
           "content": {
@@ -831,13 +865,13 @@
     "/api/orders/{id}": {
       "get": {
         "tags": ["Orders"],
-        "summary": "Get order by ID",
+        "summary": "Lấy chi tiết đơn hàng theo ID",
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
         "responses": { "200": { "description": "Order details" } }
       },
       "patch": {
         "tags": ["Orders"],
-        "summary": "Update order",
+        "summary": "Cập nhật đơn hàng",
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
         "requestBody": {
           "required": true,
@@ -859,20 +893,23 @@
       },
       "delete": {
         "tags": ["Orders"],
-        "summary": "Delete order",
+        "summary": "Xóa đơn hàng",
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
         "responses": { "200": { "description": "Order deleted" } }
       }
     },
+    "/api/orders/{id}/status": { "put": { "tags": ["Orders"], "summary": "Cập nhật trạng thái đơn hàng", "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "status": { "type": "string", "enum": ["new", "confirmed", "allocated", "invoiced", "delivered", "cancelled"] } }, "required": ["status"], "example": { "status": "confirmed" } } } } }, "responses": { "200": { "description": "Cập nhật thành công" } } } },
+    "/api/orders/{id}/payment": { "put": { "tags": ["Orders"], "summary": "Gắn thông tin thanh toán vào đơn hàng", "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "paymentId": { "type": "string" } }, "required": ["paymentId"], "example": { "paymentId": "68f9...0abc" } } } } }, "responses": { "200": { "description": "Đã ghi nhận thanh toán vào log đơn hàng" } } } },
+    "/api/orders/{id}/delivery": { "put": { "tags": ["Orders"], "summary": "Gắn thông tin giao xe vào đơn hàng", "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }], "requestBody": { "required": false, "content": { "application/json": { "schema": { "type": "object", "properties": { "actualDelivery": { "type": "string", "format": "date" }, "deliveryNote": { "type": "string" } }, "example": { "actualDelivery": "2024-12-28", "deliveryNote": "Delivered to customer home" } } } } }, "responses": { "200": { "description": "Đã cập nhật thông tin giao hàng" } } } },
     "/api/contracts": {
       "get": {
         "tags": ["Contracts"],
-        "summary": "List contracts",
+        "summary": "Liệt kê hợp đồng",
         "responses": { "200": { "description": "Contract list" } }
       },
       "post": {
         "tags": ["Contracts"],
-        "summary": "Create contract",
+        "summary": "Tạo hợp đồng",
         "requestBody": {
           "required": true,
           "content": {
@@ -906,13 +943,13 @@
     "/api/contracts/{id}": {
       "get": {
         "tags": ["Contracts"],
-        "summary": "Get contract by ID",
+        "summary": "Lấy chi tiết hợp đồng theo ID",
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
         "responses": { "200": { "description": "Contract details" } }
       },
       "patch": {
         "tags": ["Contracts"],
-        "summary": "Update contract",
+        "summary": "Cập nhật hợp đồng",
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
         "requestBody": {
           "required": true,
@@ -936,23 +973,12 @@
           }
         },
         "responses": { "200": { "description": "Contract updated" } }
-      },
-      "delete": {
-        "tags": ["Contracts"],
-        "summary": "Delete contract",
-        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
-        "responses": { "200": { "description": "Contract deleted" } }
       }
     },
     "/api/payments": {
-      "get": {
-        "tags": ["Payments"],
-        "summary": "List payments",
-        "responses": { "200": { "description": "Payment list" } }
-      },
       "post": {
         "tags": ["Payments"],
-        "summary": "Create payment",
+        "summary": "Tạo thanh toán",
         "requestBody": {
           "required": true,
           "content": {
@@ -987,56 +1013,17 @@
         "responses": { "201": { "description": "Payment created" } }
       }
     },
-    "/api/payments/{id}": {
-      "get": {
-        "tags": ["Payments"],
-        "summary": "Get payment by ID",
-        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
-        "responses": { "200": { "description": "Payment details" } }
-      },
-      "patch": {
-        "tags": ["Payments"],
-        "summary": "Update payment",
-        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "status": { "type": "string", "enum": ["pending", "confirmed", "failed"] },
-                  "transactionRef": { "type": "string" },
-                  "paidAt": { "type": "string", "format": "date-time" },
-                  "notes": { "type": "string" }
-                },
-                "example": {
-                  "status": "confirmed",
-                  "transactionRef": "TXN-2024-001234-CONFIRMED",
-                  "notes": "Payment verified and confirmed by bank"
-                }
-              }
-            }
-          }
-        },
-        "responses": { "200": { "description": "Payment updated" } }
-      },
-      "delete": {
-        "tags": ["Payments"],
-        "summary": "Delete payment",
-        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
-        "responses": { "200": { "description": "Payment deleted" } }
-      }
-    },
+    "/api/payments/{orderId}": { "get": { "tags": ["Payments"], "summary": "Lấy thanh toán theo đơn hàng", "parameters": [{ "name": "orderId", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "Danh sách thanh toán của đơn" } } } },
+    "/api/payments/{id}/status": { "put": { "tags": ["Payments"], "summary": "Cập nhật trạng thái thanh toán", "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "status": { "type": "string", "enum": ["pending", "confirmed", "failed"] } }, "required": ["status"], "example": { "status": "confirmed" } } } } }, "responses": { "200": { "description": "Cập nhật thành công" } } } },
     "/api/dealers": {
       "get": {
         "tags": ["Dealers"],
-        "summary": "List dealers",
+        "summary": "Liệt kê đại lý",
         "responses": { "200": { "description": "Dealer list" } }
       },
       "post": {
         "tags": ["Dealers"],
-        "summary": "Create dealer",
+        "summary": "Tạo đại lý",
         "requestBody": {
           "required": true,
           "content": {
@@ -1100,13 +1087,13 @@
     "/api/dealers/{id}": {
       "get": {
         "tags": ["Dealers"],
-        "summary": "Get dealer by ID",
+        "summary": "Lấy chi tiết đại lý theo ID",
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
         "responses": { "200": { "description": "Dealer details" } }
       },
       "patch": {
         "tags": ["Dealers"],
-        "summary": "Update dealer",
+        "summary": "Cập nhật đại lý",
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
         "requestBody": {
           "required": true,
@@ -1131,16 +1118,18 @@
       },
       "delete": {
         "tags": ["Dealers"],
-        "summary": "Delete dealer",
+        "summary": "Xóa đại lý",
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
         "responses": { "200": { "description": "Dealer deleted" } }
       }
     },
+    "/api/dealers/{id}/inventory": { "get": { "tags": ["Dealers"], "summary": "Xem tồn kho tại đại lý", "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "Tồn kho đại lý" } } } },
+    "/api/dealers/{id}/target": { "put": { "tags": ["Dealers"], "summary": "Cập nhật chỉ tiêu doanh số", "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "salesTarget": { "type": "number" } }, "required": ["salesTarget"], "example": { "salesTarget": 100 } } } } }, "responses": { "200": { "description": "Đã cập nhật chỉ tiêu" } } } },
     "/api/reports/sales": {
       "get": {
         "tags": ["Reports"],
-        "summary": "Sales report",
-        "description": "Get sales report by date range and dealer",
+        "summary": "Báo cáo doanh số",
+        "description": "Lấy báo cáo doanh số theo khoảng thời gian và đại lý",
         "parameters": [
           { "name": "startDate", "in": "query", "schema": { "type": "string", "format": "date" } },
           { "name": "endDate", "in": "query", "schema": { "type": "string", "format": "date" } },
@@ -1152,28 +1141,37 @@
     "/api/reports/inventory": {
       "get": {
         "tags": ["Reports"],
-        "summary": "Inventory report",
-        "description": "Get inventory report with low stock alerts",
+        "summary": "Báo cáo tồn kho",
+        "description": "Lấy báo cáo tồn kho kèm cảnh báo sắp hết hàng",
         "responses": { "200": { "description": "Inventory report data" } }
       }
     },
     "/api/reports/debt": {
       "get": {
         "tags": ["Reports"],
-        "summary": "Debt report",
-        "description": "Get dealer debt report",
+        "summary": "Báo cáo công nợ",
+        "description": "Lấy báo cáo công nợ của đại lý",
         "responses": { "200": { "description": "Debt report data" } }
       }
     },
+    "/api/deliveries": { "post": { "tags": ["Deliveries"], "summary": "Tạo phiếu giao xe", "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "order": { "type": "string" }, "address": { "type": "string" }, "scheduledAt": { "type": "string", "format": "date-time" }, "notes": { "type": "string" } }, "required": ["order"], "example": { "order": "68f9...abcd", "address": "123 Trần Hưng Đạo, Hà Nội", "scheduledAt": "2024-12-27T09:00:00Z" } } } } }, "responses": { "201": { "description": "Đã tạo phiếu giao xe" } } } },
+    "/api/deliveries/{id}/status": { "put": { "tags": ["Deliveries"], "summary": "Cập nhật tiến độ giao xe", "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "status": { "type": "string", "enum": ["pending", "in_progress", "delivered"] } }, "required": ["status"], "example": { "status": "in_progress" } } } } }, "responses": { "200": { "description": "Đã cập nhật trạng thái" } } } },
+    "/api/deliveries/{orderId}": { "get": { "tags": ["Deliveries"], "summary": "Xem thông tin giao hàng theo đơn", "parameters": [{ "name": "orderId", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "Danh sách phiếu giao cho đơn" } } } },
+    "/api/feedbacks": { "get": { "tags": ["Feedbacks"], "summary": "Danh sách phản hồi", "responses": { "200": { "description": "Danh sách phản hồi" } } }, "post": { "tags": ["Feedbacks"], "summary": "Tạo phản hồi khách hàng", "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "customer": { "type": "string" }, "dealer": { "type": "string" }, "content": { "type": "string" } }, "required": ["content"], "example": { "customer": "68f9...00cc", "content": "Nhân viên tư vấn rất nhiệt tình" } } } } }, "responses": { "201": { "description": "Đã tạo phản hồi" } } } },
+    "/api/feedbacks/{id}/status": { "put": { "tags": ["Feedbacks"], "summary": "Cập nhật xử lý phản hồi", "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "status": { "type": "string", "enum": ["new", "in_progress", "resolved"] } }, "required": ["status"], "example": { "status": "resolved" } } } } }, "responses": { "200": { "description": "Đã cập nhật trạng thái" } } } },
+    "/api/dashboard/summary": { "get": { "tags": ["Dashboard"], "summary": "Tổng quan hệ thống", "responses": { "200": { "description": "Số liệu tổng quan" } } } },
+    "/api/dashboard/trends": { "get": { "tags": ["Dashboard"], "summary": "Xu hướng bán hàng 30 ngày", "responses": { "200": { "description": "Dữ liệu theo ngày" } } } },
+    "/api/users": { "get": { "tags": ["Users"], "summary": "Danh sách tài khoản", "responses": { "200": { "description": "User list" } } } },
+    "/api/users/{id}": { "put": { "tags": ["Users"], "summary": "Cập nhật thông tin user", "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "User updated" } } }, "delete": { "tags": ["Users"], "summary": "Xóa tài khoản", "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "User deleted" } } } },
     "/api/vehicle-models": {
       "get": {
-        "tags": ["Vehicles"],
-        "summary": "List vehicle models",
+        "tags": ["VehicleModels"],
+        "summary": "Liệt kê các dòng xe (models)",
         "responses": { "200": { "description": "Vehicle model list" } }
       },
       "post": {
-        "tags": ["Vehicles"],
-        "summary": "Create vehicle model",
+        "tags": ["VehicleModels"],
+        "summary": "Tạo dòng xe (model)",
         "requestBody": {
           "required": true,
           "content": {
@@ -1204,14 +1202,14 @@
     },
     "/api/vehicle-models/{id}": {
       "get": {
-        "tags": ["Vehicles"],
-        "summary": "Get vehicle model by ID",
+        "tags": ["VehicleModels"],
+        "summary": "Lấy chi tiết dòng xe theo ID",
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
         "responses": { "200": { "description": "Vehicle model details" } }
       },
       "patch": {
-        "tags": ["Vehicles"],
-        "summary": "Update vehicle model",
+        "tags": ["VehicleModels"],
+        "summary": "Cập nhật dòng xe",
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
         "requestBody": {
           "required": true,
@@ -1233,21 +1231,21 @@
         "responses": { "200": { "description": "Vehicle model updated" } }
       },
       "delete": {
-        "tags": ["Vehicles"],
-        "summary": "Delete vehicle model",
+        "tags": ["VehicleModels"],
+        "summary": "Xóa dòng xe",
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
         "responses": { "200": { "description": "Vehicle model deleted" } }
       }
     },
     "/api/vehicle-colors": {
       "get": {
-        "tags": ["Vehicles"],
-        "summary": "List vehicle colors",
+        "tags": ["VehicleColors"],
+        "summary": "Liệt kê màu xe",
         "responses": { "200": { "description": "Vehicle color list" } }
       },
       "post": {
-        "tags": ["Vehicles"],
-        "summary": "Create vehicle color",
+        "tags": ["VehicleColors"],
+        "summary": "Tạo màu xe",
         "requestBody": {
           "required": true,
           "content": {
@@ -1278,14 +1276,14 @@
     },
     "/api/vehicle-colors/{id}": {
       "get": {
-        "tags": ["Vehicles"],
-        "summary": "Get vehicle color by ID",
+        "tags": ["VehicleColors"],
+        "summary": "Lấy chi tiết màu xe theo ID",
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
         "responses": { "200": { "description": "Vehicle color details" } }
       },
       "patch": {
-        "tags": ["Vehicles"],
-        "summary": "Update vehicle color",
+        "tags": ["VehicleColors"],
+        "summary": "Cập nhật màu xe",
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
         "requestBody": {
           "required": true,
@@ -1307,8 +1305,8 @@
         "responses": { "200": { "description": "Vehicle color updated" } }
       },
       "delete": {
-        "tags": ["Vehicles"],
-        "summary": "Delete vehicle color",
+        "tags": ["VehicleColors"],
+        "summary": "Xóa màu xe",
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
         "responses": { "200": { "description": "Vehicle color deleted" } }
       }

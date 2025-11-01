@@ -2,13 +2,16 @@ const express = require('express');
 const router = express.Router();
 const vehicleController = require('../controllers/vehicleController');
 const { protect } = require('../middleware/authMiddleware');
-const { allowRoles } = require('../middleware/roles');
+const { allowRoles } = require('../middleware/authMiddleware');
 
-// Chỉ EVM Staff & Admin được xem và quản lý xe (không có Dealer Staff/Manager)
-router.get('/', protect, allowRoles('EVMStaff', 'Admin'), vehicleController.getVehicles);
-router.get('/:id', protect, allowRoles('EVMStaff', 'Admin'), vehicleController.getVehicleById);
+// Read: All roles can view vehicles
+router.get('/', protect, allowRoles('DealerStaff', 'DealerManager', 'EVMStaff', 'Admin'), vehicleController.getVehicles);
+router.get('/:id', protect, allowRoles('DealerStaff', 'DealerManager', 'EVMStaff', 'Admin'), vehicleController.getVehicleById);
 
-// Chỉ EVM Staff & Admin được thêm/sửa/xóa
+// Compare 2–3 models
+router.get('/compare', protect, allowRoles('DealerStaff', 'DealerManager'), vehicleController.compareVehicles);
+
+// Create/Update/Delete: EVM Staff & Admin
 router.post('/', protect, allowRoles('EVMStaff', 'Admin'), vehicleController.createVehicle);
 router.put('/:id', protect, allowRoles('EVMStaff', 'Admin'), vehicleController.updateVehicle);
 router.delete('/:id', protect, allowRoles('EVMStaff', 'Admin'), vehicleController.deleteVehicle);
