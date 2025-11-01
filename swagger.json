@@ -1422,7 +1422,63 @@
     "/api/dashboard/summary": { "get": { "tags": ["Dashboard"], "summary": "Tổng quan hệ thống", "responses": { "200": { "description": "Số liệu tổng quan" } } } },
     "/api/dashboard/trends": { "get": { "tags": ["Dashboard"], "summary": "Xu hướng bán hàng 30 ngày", "responses": { "200": { "description": "Dữ liệu theo ngày" } } } },
     "/api/users": { "get": { "tags": ["Users"], "summary": "Danh sách tài khoản", "responses": { "200": { "description": "User list" } } } },
-    "/api/users/{id}": { "put": { "tags": ["Users"], "summary": "Cập nhật thông tin user", "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "User updated" } } }, "delete": { "tags": ["Users"], "summary": "Xóa tài khoản", "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "User deleted" } } } },
+    "/api/users/{id}": { 
+      "put": { 
+        "tags": ["Users"], 
+        "summary": "Cập nhật thông tin user", 
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }], 
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "role": { 
+                    "type": "string", 
+                    "enum": ["Admin", "EVMStaff", "DealerManager", "DealerStaff"], 
+                    "example": "DealerStaff" 
+                  },
+                  "profile": {
+                    "type": "object",
+                    "properties": {
+                      "name": { "type": "string", "example": "Nguyen Van A" },
+                      "phone": { "type": "string", "example": "0901234567" }
+                    }
+                  },
+                  "dealer": { 
+                    "type": "string", 
+                    "description": "Dealer ID (required for DealerManager/DealerStaff)", 
+                    "example": "68f90ebebeaef72ecf6e005a" 
+                  },
+                  "status": { 
+                    "type": "string", 
+                    "enum": ["active", "locked"], 
+                    "example": "active" 
+                  }
+                },
+                "example": {
+                  "role": "DealerStaff",
+                  "profile": {
+                    "name": "Nguyen Van A",
+                    "phone": "0901234567"
+                  },
+                  "dealer": "68f90ebebeaef72ecf6e005a",
+                  "status": "active"
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "User updated" } } 
+      }, 
+      "delete": { 
+        "tags": ["Users"], 
+        "summary": "Xóa tài khoản", 
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }], 
+        "responses": { "200": { "description": "User deleted" } } 
+      } 
+    },
     "/api/vehicle-models": {
       "get": {
         "tags": ["VehicleModels"],

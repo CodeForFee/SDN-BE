@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const { ROLES } = require("../models/User");
 const { generateToken, generateRefreshToken, verifyToken } = require("../utils/jwt");
+const bcrypt = require("bcryptjs");
 
 // In-memory token blacklist (use Redis or database in production)
 const tokenBlacklist = new Set();
@@ -9,6 +10,11 @@ const tokenBlacklist = new Set();
 exports.register = async (req, res) => {
   try {
     const { email, password, role, profile, dealer } = req.body;
+
+    // Validate required fields
+    if (!email || !password || !role) {
+      return res.status(400).json({ message: "Email, password, and role are required" });
+    }
 
     // Check if user is Admin or DealerManager
     if (!req.user || (req.user.role !== "Admin" && req.user.role !== "DealerManager")) {
@@ -40,7 +46,10 @@ exports.register = async (req, res) => {
     const exists = await User.findOne({ email });
     if (exists) return res.status(400).json({ message: "User already exists" });
 
-    const user = await User.create({ email, password, role, profile, dealer });
+    // Hash password before saving
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    const user = await User.create({ email, passwordHash, role, profile, dealer });
 
     res.status(201).json({
       message: "User registered successfully",
