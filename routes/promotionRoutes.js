@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const promotionController = require('../controllers/promotionController');
 const { protect } = require('../middleware/authMiddleware');
-const { allowRoles } = require('../middleware/roles');
+const { allowRoles } = require('../middleware/authMiddleware');
 
 // Dealer Staff, Dealer Manager có thể xem khuyến mãi (chỉ đọc)
 // EVM Staff & Admin có thể quản lý

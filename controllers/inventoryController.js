@@ -118,3 +118,45 @@ module.exports = {
   updateInventory,
   deleteInventory,
 };
+
+// Additional endpoints
+module.exports.getDealerInventory = asyncHandler(async (req, res) => {
+  const { dealerId } = req.params;
+  const items = await Inventory.find({ owner: dealerId, ownerType: 'Dealer' })
+    .populate('variant', 'trim msrp')
+    .populate('color', 'name code');
+  res.status(200).json(items);
+});
+
+module.exports.transferInventory = asyncHandler(async (req, res) => {
+  const { variant, color, fromDealerId, toDealerId, quantity } = req.body;
+  if (!variant || !fromDealerId || !toDealerId || !quantity) {
+    res.status(400);
+    throw new Error("variant, fromDealerId, toDealerId, quantity are required");
+  }
+  if (fromDealerId === toDealerId) {
+    res.status(400);
+    throw new Error('fromDealerId and toDealerId must be different');
+  }
+
+  const fromItem = await Inventory.findOne({ variant, color, owner: fromDealerId, ownerType: 'Dealer' });
+  if (!fromItem || fromItem.quantity < quantity) {
+    res.status(400);
+    throw new Error('Insufficient inventory at source dealer');
+  }
+
+  // decrement source
+  fromItem.quantity -= quantity;
+  await fromItem.save();
+
+  // increment or create destination
+  let toItem = await Inventory.findOne({ variant, color, owner: toDealerId, ownerType: 'Dealer' });
+  if (toItem) {
+    toItem.quantity += quantity;
+    await toItem.save();
+  } else {
+    toItem = await Inventory.create({ variant, color, owner: toDealerId, ownerType: 'Dealer', quantity });
+  }
+
+  res.status(200).json({ message: 'Transfer completed', from: fromItem, to: toItem });
+});

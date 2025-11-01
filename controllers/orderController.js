@@ -230,3 +230,62 @@ exports.deleteOrder = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// Update order status
+exports.updateOrderStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    if (!status) return res.status(400).json({ message: "'status' is required" });
+
+    const order = await Order.findByIdAndUpdate(
+      id,
+      { status, $push: { logs: { at: new Date(), by: req.user.email || req.user._id.toString(), action: 'status', note: status } } },
+      { new: true }
+    );
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+    res.status(200).json(order);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// Attach payment info (reference)
+exports.attachPaymentToOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { paymentId } = req.body;
+    if (!paymentId) return res.status(400).json({ message: "'paymentId' is required" });
+    const order = await Order.findByIdAndUpdate(
+      id,
+      { $push: { logs: { at: new Date(), by: req.user.email || req.user._id.toString(), action: 'payment', note: paymentId } } },
+      { new: true }
+    );
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+    res.status(200).json(order);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// Attach delivery info
+exports.attachDeliveryToOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { actualDelivery, deliveryNote } = req.body;
+    const update = {};
+    if (actualDelivery) update.actualDelivery = new Date(actualDelivery);
+    const order = await Order.findByIdAndUpdate(
+      id,
+      {
+        ...update,
+        $push: { logs: { at: new Date(), by: req.user.email || req.user._id.toString(), action: 'delivery', note: deliveryNote || '' } },
+      },
+      { new: true }
+    );
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+    res.status(200).json(order);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};

@@ -114,3 +114,29 @@ exports.deleteVehicle = async (req, res) => {
         res.status(500).json({message: error.message}); 
     } 
 }
+
+// Compare 2-3 vehicle variants by ids (?ids=a,b,c) or by model trims
+exports.compareVehicles = async (req, res) => {
+  try {
+    const { ids } = req.query;
+    if (!ids) {
+      return res.status(400).json({ message: "Query param 'ids' is required (comma-separated)" });
+    }
+    const idList = String(ids)
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => s);
+    if (idList.length < 2 || idList.length > 3) {
+      return res.status(400).json({ message: 'Provide 2 or 3 ids for comparison' });
+    }
+
+    const variants = await VehicleVariant.find({ _id: { $in: idList } }).populate('model');
+    if (variants.length !== idList.length) {
+      return res.status(404).json({ message: 'One or more vehicle variants not found' });
+    }
+
+    res.status(200).json({ success: true, data: variants });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

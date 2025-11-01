@@ -1,18 +1,16 @@
 const express = require('express');
-const TestDrive = require('../models/TestDrive');
-const createCrudController = require('../controllers/crudController');
+const testDriveController = require('../controllers/testDriveController');
 const { protect } = require('../middleware/authMiddleware');
-const { allowRoles } = require('../middleware/roles');
+const { allowRoles } = require('../middleware/authMiddleware');
 
 const router = express.Router();
-const ctrl = createCrudController(TestDrive);
 
 // Dealer Staff, Dealer Manager quản lý lịch lái thử
-router.get('/', protect, allowRoles('DealerStaff', 'DealerManager', 'Admin'), ctrl.list);
-router.get('/:id', protect, allowRoles('DealerStaff', 'DealerManager', 'Admin'), ctrl.get);
-router.post('/', protect, allowRoles('DealerStaff', 'DealerManager', 'Admin'), ctrl.create);
-router.patch('/:id', protect, allowRoles('DealerStaff', 'DealerManager', 'Admin'), ctrl.update);
-router.delete('/:id', protect, allowRoles('Admin'), ctrl.remove);
+router.get('/', protect, allowRoles('DealerStaff', 'DealerManager', 'Admin'), testDriveController.getTestDrives);
+router.get('/:id', protect, allowRoles('DealerStaff', 'DealerManager', 'Admin'), testDriveController.getTestDriveById);
+router.post('/', protect, allowRoles('DealerStaff', 'DealerManager', 'Admin'), testDriveController.createTestDrive);
+router.patch('/:id', protect, allowRoles('DealerStaff', 'DealerManager', 'Admin'), testDriveController.updateTestDrive);
+router.delete('/:id', protect, allowRoles('Admin'), testDriveController.deleteTestDrive);
 
 module.exports = router;
 

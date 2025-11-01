@@ -3,6 +3,7 @@ const Quote = require("../models/Quote");
 const Customer = require("../models/Customer");
 const Dealer = require("../models/Dealer");
 const VehicleVariant = require("../models/VehicleVariant");
+const Order = require("../models/Order");
 
 const getQuotes = asyncHandler(async (req, res) => {
   let filter = {};
@@ -188,3 +189,46 @@ module.exports = {
   updateQuote,
   deleteQuote,
 };
+
+// Convert quote to order
+module.exports.convertQuote = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const quote = await Quote.findById(id);
+  if (!quote) {
+    res.status(404);
+    throw new Error('Không tìm thấy báo giá.');
+  }
+
+  // Permission: DealerStaff can convert quotes of their dealer
+  if (
+    req.user.role !== 'Admin' &&
+    req.user.role !== 'DealerManager' &&
+    req.user.dealer?.toString() !== quote.dealer.toString()
+  ) {
+    res.status(403);
+    throw new Error('Bạn không có quyền chuyển báo giá này.');
+  }
+
+  const orderItems = quote.items.map((it) => ({
+    variant: it.variant,
+    color: it.color,
+    qty: it.qty || 1,
+    unitPrice: it.unitPrice || 0,
+  }));
+
+  const order = await Order.create({
+    dealer: quote.dealer,
+    sales: req.user._id,
+    customer: quote.customer,
+    quote: quote._id,
+    items: orderItems,
+    paymentMethod: 'cash',
+    deposit: 0,
+    status: 'new',
+  });
+
+  quote.status = 'accepted';
+  await quote.save();
+
+  res.status(200).json({ message: 'Converted to order', orderId: order._id });
+});

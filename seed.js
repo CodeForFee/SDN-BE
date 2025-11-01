@@ -14,14 +14,11 @@ const Quote = require("./models/Quote");
 const VehicleModel = require("./models/VehicleModel");
 const VehicleVariant = require("./models/VehicleVariant");
 const VehicleColor = require("./models/VehicleColor");
-const DealerContract = require("./models/DealerContract");
-const DealerTarget = require("./models/DealerTarget");
-const Complaint = require("./models/Complaint");
-const Allocation = require("./models/Allocation");
 const Payment = require("./models/Payment");
 const TestDrive = require("./models/TestDrive");
-const PricePolicy = require("./models/PricePolicy");
 const SalesContract = require("./models/SalesContract");
+const Delivery = require("./models/Delivery");
+const Feedback = require("./models/Feedback");
 
 mongoose
   .connect(process.env.MONGO_URI)
@@ -41,14 +38,11 @@ const seed = async () => {
     await VehicleModel.deleteMany();
     await VehicleVariant.deleteMany();
     await VehicleColor.deleteMany();
-    await DealerContract.deleteMany();
-    await DealerTarget.deleteMany();
-    await Complaint.deleteMany();
-    await Allocation.deleteMany();
     await Payment.deleteMany();
     await TestDrive.deleteMany();
-    await PricePolicy.deleteMany();
     await SalesContract.deleteMany();
+    await Delivery.deleteMany();
+    await Feedback.deleteMany();
 
     console.log("🧹 Old data cleared");
 
@@ -93,33 +87,33 @@ const seed = async () => {
     const passwordHash = await bcrypt.hash("123456", 10);
     const userData = [
       {
-        email: "admin@evms.com",
+        email: "admin@evm.com",
         passwordHash,
         role: "Admin",
         profile: { name: "System Admin" },
       },
       {
-        email: "evm.staff@evms.com", 
+        email: "evm@evm.com", 
         passwordHash,
         role: "EVMStaff",
         profile: { name: "EVM Staff Manager" },
       },
       {
-        email: "hanoi.manager@evdealer.com",
+        email: "manager@evm.com",
         passwordHash, 
         role: "DealerManager",
         dealer: dealers[0]._id,
         profile: { name: "Hanoi Dealer Manager" },
       },
       {
-        email: "hanoi.staff1@evdealer.com",
+        email: "staff1@evm.com",
         passwordHash,
         role: "DealerStaff", 
         dealer: dealers[0]._id,
         profile: { name: "Hanoi Dealer Staff 1" },
       },
       {
-        email: "hcm.manager@evdealer.com",
+        email: "manager1@evm.com",
         passwordHash,
         role: "DealerManager",
         dealer: dealers[1]._id,
@@ -310,68 +304,38 @@ const seed = async () => {
       },
     ]);
 
-    // Seed Dealer Contracts
-    const dealerContracts = await DealerContract.insertMany([
+    // Seed Deliveries
+    const deliveries = await Delivery.insertMany([
       {
-        dealer: dealers[0]._id,
-        startDate: new Date('2024-01-01'),
-        endDate: new Date('2026-12-31'),
-        targets: "Annual target: 100 units",
-        discountPolicyRef: "POL-2024-001",
-        status: 'active',
+        order: orders[0]._id,
+        address: '123 Trần Hưng Đạo, Hà Nội',
+        scheduledAt: new Date(new Date().setDate(new Date().getDate() + 7)),
+        status: 'in_progress',
+        notes: 'Customer available in the morning',
       },
       {
-        dealer: dealers[1]._id,
-        startDate: new Date('2024-01-01'),
-        endDate: new Date('2026-12-31'),
-        targets: "Annual target: 150 units",
-        discountPolicyRef: "POL-2024-002",
-        status: 'active',
+        order: orders[1]._id,
+        address: '22 Nguyễn Huệ, TP.HCM',
+        scheduledAt: new Date(new Date().setDate(new Date().getDate() + 10)),
+        status: 'pending',
       },
     ]);
 
-    // Seed Dealer Targets
-    const dealerTargets = [];
-    const months = ['01', '02', '03', '04', '05', '06'];
-    
-    for (const dealer of dealers) {
-      for (const month of months) {
-        const period = `2024-${month}`;
-        const baseUnits = dealer.name.includes('HCM') ? 12 : 8;
-        const baseRevenue = baseUnits * 6000000000;
-        
-        dealerTargets.push({
-          dealer: dealer._id,
-          period,
-          targetUnits: baseUnits,
-          achievedUnits: Math.floor(baseUnits * 0.8),
-          targetRevenue: baseRevenue,
-          achievedRevenue: Math.floor(baseRevenue * 0.8),
-          status: 'on_track',
-        });
-      }
-    }
-    await DealerTarget.insertMany(dealerTargets);
-
-    // Seed Price Policies
-    const pricePolicies = await PricePolicy.insertMany([
+    // Seed Feedbacks
+    const feedbacks = await Feedback.insertMany([
       {
-        variant: vehicleVariants[1]._id,
-        baseWholesalePrice: 5500000000,
-        discountType: "fixed",
-        discountValue: 0,
-        validFrom: new Date('2024-01-01'),
-        validTo: new Date('2024-12-31'),
-        status: "active",
+        customer: customers[0]._id,
+        dealer: dealers[0]._id,
+        createdBy: users[3]._id, // Hanoi Staff 1
+        content: 'Khách hàng rất hài lòng về tư vấn và trải nghiệm.',
+        status: 'resolved',
       },
       {
-        variant: vehicleVariants[2]._id,
-        baseWholesalePrice: 6000000000,
-        discountType: "fixed",
-        discountValue: 0,
-        validFrom: new Date('2024-01-01'),
-        validTo: new Date('2024-12-31'),
-        status: "active",
+        customer: customers[1]._id,
+        dealer: dealers[1]._id,
+        createdBy: users[1]._id, // EVM Staff (giả lập ý kiến hệ thống)
+        content: 'Khách đề xuất thêm tùy chọn màu nội thất.',
+        status: 'in_progress',
       },
     ]);
 
@@ -424,34 +388,6 @@ const seed = async () => {
     }
     await Payment.insertMany(payments);
 
-    // Seed Complaints
-    const complaints = await Complaint.insertMany([
-      {
-        customer: customers[0]._id,
-        dealer: dealers[0]._id,
-        order: orders[0]._id,
-        type: 'delivery',
-        content: 'Vehicle delivery was delayed',
-        status: 'resolved',
-        resolution: 'Compensated with free maintenance',
-      },
-    ]);
-
-    // Seed Allocations
-    const allocations = await Allocation.insertMany([
-      {
-        fromOwner: 'EVM',
-        toDealer: dealers[0]._id,
-        variant: vehicleVariants[1]._id,
-        color: vehicleColors[0]._id,
-        quantity: 10,
-        requestedBy: users[2]._id,
-        approvedBy: users[1]._id,
-        status: 'received',
-        expectedDate: new Date(),
-      },
-    ]);
-
     // Seed Sales Contracts
     const salesContracts = await SalesContract.insertMany([
       {
@@ -477,19 +413,18 @@ const seed = async () => {
     console.log(`   - Quotes: 1`);
     console.log(`   - Test Drives: ${testDrives.length}`);
     console.log(`   - Payments: ${payments.length}`);
-    console.log(`   - Complaints: ${complaints.length}`);
-    console.log(`   - Allocations: ${allocations.length}`);
     console.log(`   - Sales Contracts: ${salesContracts.length}`);
-    console.log(`   - Dealer Contracts: ${dealerContracts.length}`);
-    console.log(`   - Dealer Targets: ${dealerTargets.length}`);
-    console.log(`   - Price Policies: ${pricePolicies.length}`);
+    console.log(`   - Deliveries: ${deliveries.length}`);
+    console.log(`   - Feedbacks: ${feedbacks.length}`);
     console.log(`\n🔑 Test Accounts:`);
     console.log(`   Admin: admin@evms.com / 123456`);
-    console.log(`   EVM Staff: evm.staff@evms.com / 123456`);
-    console.log(`   Hanoi Manager: hanoi.manager@evdealer.com / 123456`);
-    console.log(`   Hanoi Staff: hanoi.staff1@evdealer.com / 123456`);
-    console.log(`   HCM Manager: hcm.manager@evdealer.com / 123456`);
-    console.log(`   Da Nang Manager: danang.manager@evdealer.com / 123456`);
+    console.log(`   EVM Staff: evm@evm.com / 123456`);
+    console.log(`   Hanoi Manager: manager1@evm.com / 123456`);
+    console.log(`   Hanoi Staff: staff1@evm.com / 123456`);
+    console.log(`   HCM Manager: manager1@evm.com / 123456`);
+    console.log(`   HCM Staff: staff1@evm.com / 123456`);
+    console.log(`   Da Nang Manager: manager1@evm.com / 123456`);
+    console.log(`   Da Nang Staff: staff1@evm.com / 123456`);
     
     process.exit();
   } catch (err) {
