@@ -10,10 +10,14 @@ const tokenBlacklist = new Set();
 exports.register = async (req, res) => {
   try {
     const { email, password, role, profile, dealer } = req.body;
+    
     // Validate required fields
     if (!email || !password || !role) {
       return res.status(400).json({ message: "Email, password, and role are required" });
     }
+    
+    // Status is controlled by backend only - ignore if sent from frontend
+    // New users are always created with status 'active'
     // Check if user is Admin or DealerManager
     if (!req.user || (req.user.role !== "Admin" && req.user.role !== "DealerManager")) {
       return res
@@ -30,13 +34,32 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: "Invalid role" });
     }
 
+    // Handle dealer field: convert empty string to undefined/null
+    // Mongoose cannot cast empty string "" to ObjectId
+    let dealerId = dealer;
+    if (dealerId === "" || dealerId === null || dealerId === undefined) {
+      dealerId = undefined;
+    }
+
+    // Roles that don't require dealer
+    const rolesWithoutDealer = ["EVMStaff", "Admin"];
+    
     // DealerManager must create users for their own dealer
     if (req.user.role === "DealerManager") {
-      if (!dealer || dealer.toString() !== req.user.dealer.toString()) {
+      if (!dealerId || dealerId.toString() !== req.user.dealer.toString()) {
         return res.status(403).json({ 
           message: "DealerManager can only create staff for their own dealer" 
         });
       }
+      // DealerManager creates DealerStaff, so dealer is required and already validated above
+    } else if (req.user.role === "Admin") {
+      // Admin can create any role
+      // If role doesn't need dealer, ignore dealer value
+      if (rolesWithoutDealer.includes(role)) {
+        dealerId = undefined;
+      }
+      // If role needs dealer (DealerStaff, DealerManager), dealerId should be provided
+      // But if empty string was sent, dealerId is already set to undefined
     }
 
     const exists = await User.findOne({ email });
@@ -45,7 +68,22 @@ exports.register = async (req, res) => {
     // Hash password before saving
     const passwordHash = await bcrypt.hash(password, 10);
 
-    const user = await User.create({ email, passwordHash, role, profile, dealer });
+    // Prepare user data - only include dealer if it has a valid value
+    const userData = {
+      email, 
+      passwordHash, 
+      role, 
+      profile,
+      status: 'active' // Explicitly set status - users are active by default
+    };
+
+    // Only add dealer if it's a valid value
+    if (dealerId) {
+      userData.dealer = dealerId;
+    }
+
+    // Create user with default status 'active' (status is controlled by backend only)
+    const user = await User.create(userData);
 
     res.status(201).json({
       message: "User registered successfully",
