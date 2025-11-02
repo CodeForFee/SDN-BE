@@ -6,8 +6,8 @@ const { allowRoles } = require('../middleware/authMiddleware');
 const router = express.Router();
 
 // Dealer Manager, EVM Staff & Admin có thể xem đại lý
-router.get('/', protect, allowRoles('DealerManager', 'EVMStaff', 'Admin'), dealerController.getDealers);
-router.get('/:id', protect, allowRoles('DealerManager', 'EVMStaff', 'Admin'), dealerController.getDealerById);
+router.get('/', protect, allowRoles('DealerManager', 'EVMStaff', 'Admin', 'DealerStaff'), dealerController.getDealers);
+router.get('/:id', protect, allowRoles('DealerManager', 'EVMStaff', 'Admin', 'DealerStaff'), dealerController.getDealerById);
 
 // Chỉ Admin tạo mới đại lý
 router.post('/', protect, allowRoles('Admin'), dealerController.createDealer);
