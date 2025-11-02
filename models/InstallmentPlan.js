@@ -60,3 +60,4 @@ InstallmentPlanSchema.index({ status: 1 });
 
 module.exports = mongoose.models.InstallmentPlan || mongoose.model('InstallmentPlan', InstallmentPlanSchema);
 
+
