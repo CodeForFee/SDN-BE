@@ -10,6 +10,7 @@ router.get('/', protect, allowRoles('DealerStaff', 'DealerManager', 'Admin'), co
 router.get('/:id', protect, allowRoles('DealerStaff', 'DealerManager', 'Admin'), contractController.getContractById);
 router.post('/', protect, allowRoles('DealerStaff', 'DealerManager', 'Admin'), contractController.createContract);
 router.put('/:id', protect, allowRoles('DealerManager', 'Admin'), contractController.updateContract);
+router.patch('/:id', protect, allowRoles('DealerManager', 'Admin'), contractController.updateContract);
 
 module.exports = router;
 

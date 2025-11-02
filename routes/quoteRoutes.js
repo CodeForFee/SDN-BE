@@ -12,6 +12,10 @@ router.post('/', protect, allowRoles('DealerStaff', 'DealerManager', 'Admin'), q
 router.patch('/:id', protect, allowRoles('DealerStaff', 'DealerManager', 'Admin'), quoteController.updateQuote);
 router.delete('/:id', protect, allowRoles('Admin'), quoteController.deleteQuote);
 
+// Quote approval (Dealer Manager)
+router.put('/:id/approve', protect, allowRoles('DealerManager', 'Admin'), quoteController.approveQuote);
+router.put('/:id/reject', protect, allowRoles('DealerManager', 'Admin'), quoteController.rejectQuote);
+
 // Convert quote to order
 router.put('/:id/convert', protect, allowRoles('DealerStaff', 'DealerManager'), quoteController.convertQuote);
 

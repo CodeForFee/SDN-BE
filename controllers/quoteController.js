@@ -10,7 +10,7 @@ const getQuotes = asyncHandler(async (req, res) => {
   const userRole = req.user.role;
 
   // Lọc theo Dealer
-  if (userRole === "Dealer Staff" || userRole === "Dealer Manager") {
+  if (userRole === "DealerStaff" || userRole === "DealerManager") {
     if (req.user.dealer) {
       // Giả định req.user.dealer là ID của đại lý
       filter.dealer = req.user.dealer;
@@ -22,7 +22,7 @@ const getQuotes = asyncHandler(async (req, res) => {
 
   const quotes = await Quote.find(filter)
     .populate("customer", "fullName email phone")
-    .populate("dealer", "name")
+    .populate("dealer", "name region")
     .populate({
       path: "items.variant",
       select: "trim msrp"
@@ -38,7 +38,7 @@ const getQuotes = asyncHandler(async (req, res) => {
 const getQuoteById = asyncHandler(async (req, res) => {
   const quote = await Quote.findById(req.params.id)
     .populate("customer", "fullName email phone")
-    .populate("dealer", "name")
+    .populate("dealer", "name region")
     .populate({
       path: "items.variant",
       select: "trim msrp"
@@ -56,7 +56,7 @@ const getQuoteById = asyncHandler(async (req, res) => {
   // Kiểm tra quyền: Dealer Staff/Manager chỉ được xem báo giá của dealer mình
   const userRole = req.user.role;
   if (
-    (userRole === "Dealer Staff" || userRole === "Dealer Manager") &&
+    (userRole === "DealerStaff" || userRole === "DealerManager") &&
     req.user.dealer.toString() !== quote.dealer._id.toString()
   ) {
     res.status(403);
@@ -67,7 +67,7 @@ const getQuoteById = asyncHandler(async (req, res) => {
 });
 
 const createQuote = asyncHandler(async (req, res) => {
-  const { customer, items, subtotal, discount, total, validUntil, notes } = req.body;
+  const { customer, items, subtotal, discount, promotionTotal, fees, total, validUntil, notes } = req.body;
   const dealer = req.user.dealer; // Lấy ID đại lý từ user đã đăng nhập
 
   if (!customer || !items || !items.length || !dealer) {
@@ -93,19 +93,48 @@ const createQuote = asyncHandler(async (req, res) => {
     }
   }
 
+  // Tính toán total nếu chưa được gửi lên
+  let calculatedTotal = total;
+  if (!calculatedTotal && subtotal !== undefined) {
+    const discountAmount = discount || 0;
+    const promotionAmount = promotionTotal || 0;
+    const feesTotal = fees ? (fees.registration || 0) + (fees.plate || 0) + (fees.delivery || 0) : 0;
+    calculatedTotal = subtotal - discountAmount - promotionAmount + feesTotal;
+  }
+
   const newQuote = await Quote.create({
     customer,
     dealer,
+    sales: req.user._id, // Track who created the quote
     items,
-    subtotal,
-    discount,
-    total,
-    validUntil,
+    subtotal: subtotal || 0,
+    discount: discount || 0,
+    promotionTotal: promotionTotal || 0,
+    fees: fees || {
+      registration: 0,
+      plate: 0,
+      delivery: 0,
+    },
+    total: calculatedTotal || 0,
+    validUntil: validUntil ? new Date(validUntil) : undefined,
     notes,
     status: 'draft',
   });
 
-  res.status(201).json(newQuote);
+  // Populate customer và dealer trước khi trả về
+  const populatedQuote = await Quote.findById(newQuote._id)
+    .populate("customer", "fullName email phone")
+    .populate("dealer", "name region")
+    .populate({
+      path: "items.variant",
+      select: "trim msrp"
+    })
+    .populate({
+      path: "items.color",
+      select: "name code"
+    });
+
+  res.status(201).json(populatedQuote);
 });
 
 const updateQuote = asyncHandler(async (req, res) => {
@@ -147,7 +176,7 @@ const updateQuote = asyncHandler(async (req, res) => {
     { new: true, runValidators: true }
   )
     .populate("customer", "fullName email phone")
-    .populate("dealer", "name")
+    .populate("dealer", "name region")
     .populate({
       path: "items.variant",
       select: "trim msrp"
@@ -190,6 +219,109 @@ module.exports = {
   deleteQuote,
 };
 
+// @desc Approve quote (Dealer Manager)
+module.exports.approveQuote = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { notes } = req.body;
+
+  const quote = await Quote.findById(id);
+  if (!quote) {
+    res.status(404);
+    throw new Error('Không tìm thấy báo giá.');
+  }
+
+  // Check permission - only Dealer Manager of the same dealer or Admin
+  if (
+    req.user.role !== 'Admin' &&
+    (req.user.role !== 'DealerManager' || req.user.dealer?.toString() !== quote.dealer.toString())
+  ) {
+    res.status(403);
+    throw new Error('Bạn không có quyền duyệt báo giá này.');
+  }
+
+  // Check if quote is in valid state for approval
+  if (quote.status !== 'draft' && quote.status !== 'sent') {
+    res.status(400);
+    throw new Error(`Báo giá không thể duyệt. Trạng thái hiện tại: ${quote.status}`);
+  }
+
+  quote.status = 'accepted';
+  if (notes) {
+    quote.notes = (quote.notes || '') + '\n' + notes;
+  }
+  await quote.save();
+
+  const populatedQuote = await Quote.findById(quote._id)
+    .populate("customer", "fullName email phone")
+    .populate("dealer", "name region")
+    .populate({
+      path: "items.variant",
+      select: "trim msrp"
+    })
+    .populate({
+      path: "items.color",
+      select: "name code"
+    });
+
+  res.status(200).json({
+    message: 'Báo giá đã được duyệt thành công',
+    data: populatedQuote
+  });
+});
+
+// @desc Reject quote (Dealer Manager)
+module.exports.rejectQuote = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { reason } = req.body;
+
+  if (!reason) {
+    res.status(400);
+    throw new Error('Lý do từ chối là bắt buộc.');
+  }
+
+  const quote = await Quote.findById(id);
+  if (!quote) {
+    res.status(404);
+    throw new Error('Không tìm thấy báo giá.');
+  }
+
+  // Check permission - only Dealer Manager of the same dealer or Admin
+  if (
+    req.user.role !== 'Admin' &&
+    (req.user.role !== 'DealerManager' || req.user.dealer?.toString() !== quote.dealer.toString())
+  ) {
+    res.status(403);
+    throw new Error('Bạn không có quyền từ chối báo giá này.');
+  }
+
+  // Check if quote is in valid state for rejection
+  if (quote.status !== 'draft' && quote.status !== 'sent') {
+    res.status(400);
+    throw new Error(`Báo giá không thể từ chối. Trạng thái hiện tại: ${quote.status}`);
+  }
+
+  quote.status = 'rejected';
+  quote.notes = (quote.notes || '') + '\n[Từ chối]: ' + reason;
+  await quote.save();
+
+  const populatedQuote = await Quote.findById(quote._id)
+    .populate("customer", "fullName email phone")
+    .populate("dealer", "name region")
+    .populate({
+      path: "items.variant",
+      select: "trim msrp"
+    })
+    .populate({
+      path: "items.color",
+      select: "name code"
+    });
+
+  res.status(200).json({
+    message: 'Báo giá đã được từ chối',
+    data: populatedQuote
+  });
+});
+
 // Convert quote to order
 module.exports.convertQuote = asyncHandler(async (req, res) => {
   const { id } = req.params;
@@ -209,6 +341,12 @@ module.exports.convertQuote = asyncHandler(async (req, res) => {
     throw new Error('Bạn không có quyền chuyển báo giá này.');
   }
 
+  // Only accepted quotes can be converted to order
+  if (quote.status !== 'accepted') {
+    res.status(400);
+    throw new Error(`Chỉ báo giá đã được duyệt (accepted) mới có thể chuyển thành đơn hàng. Trạng thái hiện tại: ${quote.status}`);
+  }
+
   const orderItems = quote.items.map((it) => ({
     variant: it.variant,
     color: it.color,
@@ -226,9 +364,6 @@ module.exports.convertQuote = asyncHandler(async (req, res) => {
     deposit: 0,
     status: 'new',
   });
-
-  quote.status = 'accepted';
-  await quote.save();
 
   res.status(200).json({ message: 'Converted to order', orderId: order._id });
 });

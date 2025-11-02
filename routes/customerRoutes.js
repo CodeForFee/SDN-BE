@@ -7,6 +7,7 @@ const router = express.Router();
 
 // Dealer Staff, Dealer Manager có thể quản lý khách hàng của đại lý
 router.get('/', protect, allowRoles('DealerStaff', 'DealerManager', 'Admin'), customerController.getCustomers);
+router.get('/:id/debt', protect, allowRoles('DealerStaff', 'DealerManager', 'EVMStaff', 'Admin'), customerController.getCustomerDebt);
 router.get('/:id', protect, allowRoles('DealerStaff', 'DealerManager', 'Admin'), customerController.getCustomerById);
 router.post('/', protect, allowRoles('DealerStaff', 'DealerManager', 'Admin'), customerController.createCustomer);
 router.patch('/:id', protect, allowRoles('DealerStaff', 'DealerManager', 'Admin'), customerController.updateCustomer);

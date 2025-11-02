@@ -90,8 +90,39 @@ exports.createPayment = async (req, res) => {
 exports.getPaymentsByOrder = async (req, res) => {
   try {
     const { orderId } = req.params;
-    const items = await Payment.find({ order: orderId });
+    const items = await Payment.find({ order: orderId })
+      .populate({
+        path: 'order',
+        select: 'orderNo dealer customer',
+        populate: {
+          path: 'customer',
+          select: 'fullName phone'
+        }
+      });
     res.status(200).json(items);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getPaymentById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const payment = await Payment.findById(id)
+      .populate({
+        path: 'order',
+        select: 'orderNo dealer customer',
+        populate: {
+          path: 'customer',
+          select: 'fullName phone'
+        }
+      });
+    
+    if (!payment) {
+      return res.status(404).json({ message: 'Payment not found' });
+    }
+    
+    res.status(200).json(payment);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -101,11 +132,62 @@ exports.updatePaymentStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
-    const updated = await Payment.findByIdAndUpdate(id, { status }, { new: true });
+    
+    // Prepare update data
+    const updateData = { status };
+    
+    // If status is 'confirmed', automatically set paidAt to current date
+    if (status === 'confirmed') {
+      updateData.paidAt = new Date();
+    }
+    
+    const updated = await Payment.findByIdAndUpdate(id, updateData, { new: true })
+      .populate({
+        path: 'order',
+        select: 'orderNo dealer customer',
+        populate: {
+          path: 'customer',
+          select: 'fullName phone'
+        }
+      });
     if (!updated) return res.status(404).json({ message: 'Payment not found' });
     res.status(200).json(updated);
   } catch (error) {
     res.status(400).json({ message: error.message });
+  }
+};
+
+exports.updatePayment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updated = await Payment.findByIdAndUpdate(id, req.body, { new: true, runValidators: true })
+      .populate({
+        path: 'order',
+        select: 'orderNo dealer customer',
+        populate: {
+          path: 'customer',
+          select: 'fullName phone'
+        }
+      });
+    if (!updated) return res.status(404).json({ message: 'Payment not found' });
+    res.status(200).json(updated);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+exports.deletePayment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleted = await Payment.findByIdAndDelete(id);
+    if (!deleted) return res.status(404).json({ message: 'Payment not found' });
+    res.status(200).json({ 
+      success: true, 
+      message: 'Payment deleted successfully',
+      data: deleted 
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 

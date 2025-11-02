@@ -9,6 +9,7 @@ const reportController = require('../controllers/reportController');
 router.get('/sales', protect, allowRoles('DealerManager', 'EVMStaff', 'Admin'), reportController.salesReport);
 router.get('/debt', protect, allowRoles('DealerManager', 'EVMStaff', 'Admin'), reportController.debtReport);
 router.get('/inventory', protect, allowRoles('DealerManager', 'EVMStaff', 'Admin'), reportController.inventoryReport);
+router.get('/personal', protect, allowRoles('DealerStaff'), reportController.personalReport);
 
 module.exports = router;
 

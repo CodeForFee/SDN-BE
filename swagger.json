@@ -1096,11 +1096,28 @@
       "get": {
         "tags": ["Contracts"],
         "summary": "Liệt kê hợp đồng",
-        "responses": { "200": { "description": "Contract list" } }
+        "description": "Lấy danh sách tất cả hợp đồng bán hàng. Trả về kèm thông tin order, dealer, customer, và sales.",
+        "responses": {
+          "200": {
+            "description": "Danh sách hợp đồng",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SalesContract"
+                  }
+                }
+              }
+            }
+          },
+          "500": { "description": "Server error" }
+        }
       },
       "post": {
         "tags": ["Contracts"],
         "summary": "Tạo hợp đồng",
+        "description": "Tạo hợp đồng bán hàng mới cho một order",
         "requestBody": {
           "required": true,
           "content": {
@@ -1108,40 +1125,70 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "dealer": { "type": "string", "description": "Dealer ID", "example": "68f90ebebeaef72ecf6e005a" },
-                  "startDate": { "type": "string", "format": "date", "example": "2024-01-01" },
-                  "endDate": { "type": "string", "format": "date", "example": "2026-12-31" },
-                  "targets": { "type": "string", "example": "Annual sales target: 150 units, Revenue: 900 billion VND" },
-                  "discountPolicyRef": { "type": "string", "example": "POL-2024-HN-001" },
-                  "status": { "type": "string", "enum": ["draft", "active", "expired", "terminated"], "example": "active" }
+                  "order": { "type": "string", "description": "Order ID (required)", "example": "6905cfa31994fa0215b2cb1f" },
+                  "contractNo": { "type": "string", "description": "Số hợp đồng (required)", "example": "HD-2024-001" },
+                  "signedDate": { "type": "string", "format": "date", "description": "Ngày ký hợp đồng", "example": "2024-01-15" },
+                  "files": { 
+                    "type": "array", 
+                    "items": { "type": "string" },
+                    "description": "Danh sách đường dẫn file hợp đồng",
+                    "example": ["/uploads/contracts/hd-2024-001.pdf"]
+                  },
+                  "terms": { "type": "string", "description": "Điều khoản hợp đồng", "example": "Thanh toán 30% khi ký hợp đồng, 70% khi nhận xe" },
+                  "status": { "type": "string", "enum": ["draft", "signed", "cancelled"], "description": "Trạng thái hợp đồng", "example": "draft", "default": "draft" }
                 },
-                "required": ["dealer", "startDate", "endDate"],
+                "required": ["order", "contractNo"],
                 "example": {
-                  "dealer": "68f90ebebeaef72ecf6e005a",
-                  "startDate": "2024-01-01",
-                  "endDate": "2026-12-31",
-                  "targets": "Annual sales target: 120 units VF8, Revenue target: 780 billion VND",
-                  "discountPolicyRef": "POL-2024-HN-001",
-                  "status": "active"
+                  "order": "6905cfa31994fa0215b2cb1f",
+                  "contractNo": "HD-2024-001",
+                  "signedDate": "2024-01-15",
+                  "terms": "Thanh toán 30% khi ký hợp đồng, 70% khi nhận xe. Giao xe trong vòng 30 ngày.",
+                  "status": "draft"
                 }
               }
             }
           }
         },
-        "responses": { "201": { "description": "Contract created" } }
+        "responses": {
+          "201": {
+            "description": "Hợp đồng đã được tạo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SalesContract"
+                }
+              }
+            }
+          },
+          "400": { "description": "Validation error" }
+        }
       }
     },
     "/api/contracts/{id}": {
       "get": {
         "tags": ["Contracts"],
         "summary": "Lấy chi tiết hợp đồng theo ID",
-        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
-        "responses": { "200": { "description": "Contract details" } }
+        "description": "Lấy thông tin chi tiết của một hợp đồng bán hàng. Trả về kèm thông tin order, dealer, customer, và sales.",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" }, "description": "SalesContract ID" }],
+        "responses": {
+          "200": {
+            "description": "Chi tiết hợp đồng",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SalesContract"
+                }
+              }
+            }
+          },
+          "404": { "description": "Contract not found" }
+        }
       },
-      "patch": {
+      "put": {
         "tags": ["Contracts"],
-        "summary": "Cập nhật hợp đồng",
-        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "summary": "Cập nhật hợp đồng (PUT)",
+        "description": "Cập nhật toàn bộ thông tin hợp đồng. Role: DealerManager, Admin",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" }, "description": "SalesContract ID" }],
         "requestBody": {
           "required": true,
           "content": {
@@ -1149,21 +1196,79 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "startDate": { "type": "string", "format": "date" },
-                  "endDate": { "type": "string", "format": "date" },
-                  "targets": { "type": "string" },
-                  "discountPolicyRef": { "type": "string" },
-                  "status": { "type": "string", "enum": ["draft", "active", "expired", "terminated"] }
+                  "order": { "type": "string", "description": "Order ID" },
+                  "contractNo": { "type": "string", "description": "Số hợp đồng" },
+                  "signedDate": { "type": "string", "format": "date" },
+                  "files": { "type": "array", "items": { "type": "string" } },
+                  "terms": { "type": "string" },
+                  "status": { "type": "string", "enum": ["draft", "signed", "cancelled"] }
                 },
                 "example": {
-                  "targets": "Updated annual target: 150 units, Revenue: 975 billion VND",
-                  "status": "active"
+                  "contractNo": "HD-2024-001",
+                  "signedDate": "2024-01-15",
+                  "terms": "Cập nhật điều khoản thanh toán",
+                  "status": "signed"
                 }
               }
             }
           }
         },
-        "responses": { "200": { "description": "Contract updated" } }
+        "responses": {
+          "200": {
+            "description": "Hợp đồng đã được cập nhật",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SalesContract"
+                }
+              }
+            }
+          },
+          "400": { "description": "Validation error" },
+          "404": { "description": "Contract not found" }
+        }
+      },
+      "patch": {
+        "tags": ["Contracts"],
+        "summary": "Cập nhật hợp đồng (PATCH)",
+        "description": "Cập nhật một phần thông tin hợp đồng. Role: DealerManager, Admin",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" }, "description": "SalesContract ID" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "contractNo": { "type": "string", "description": "Số hợp đồng" },
+                  "signedDate": { "type": "string", "format": "date", "description": "Ngày ký hợp đồng" },
+                  "files": { "type": "array", "items": { "type": "string" }, "description": "Danh sách file hợp đồng" },
+                  "terms": { "type": "string", "description": "Điều khoản hợp đồng" },
+                  "status": { "type": "string", "enum": ["draft", "signed", "cancelled"], "description": "Trạng thái hợp đồng" }
+                },
+                "example": {
+                  "signedDate": "2024-01-20",
+                  "terms": "Cập nhật điều khoản thanh toán: 40% khi ký, 60% khi nhận xe",
+                  "status": "signed"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Hợp đồng đã được cập nhật",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SalesContract"
+                }
+              }
+            }
+          },
+          "400": { "description": "Validation error" },
+          "404": { "description": "Contract not found" }
+        }
       }
     },
     "/api/payments": {
@@ -1635,6 +1740,112 @@
         "scheme": "bearer",
         "bearerFormat": "JWT"
       }
+    },
+    "schemas": {
+      "SalesContract": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string",
+            "description": "Contract ID"
+          },
+          "order": {
+            "oneOf": [
+              { "type": "string" },
+              {
+                "type": "object",
+                "description": "Populated Order object with dealer, customer, and sales",
+                "properties": {
+                  "_id": { "type": "string" },
+                  "orderNo": { "type": "string" },
+                  "dealer": {
+                    "oneOf": [
+                      { "type": "string" },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "_id": { "type": "string" },
+                          "name": { "type": "string" }
+                        }
+                      }
+                    ]
+                  },
+                  "customer": {
+                    "oneOf": [
+                      { "type": "string" },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "_id": { "type": "string" },
+                          "name": { "type": "string" },
+                          "email": { "type": "string" },
+                          "phone": { "type": "string" }
+                        }
+                      }
+                    ]
+                  },
+                  "sales": {
+                    "oneOf": [
+                      { "type": "string" },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "_id": { "type": "string" },
+                          "name": { "type": "string" },
+                          "email": { "type": "string" }
+                        }
+                      }
+                    ]
+                  },
+                  "status": { "type": "string" },
+                  "total": { "type": "number" }
+                }
+              }
+            ],
+            "description": "Order ID or populated Order object"
+          },
+          "contractNo": {
+            "type": "string",
+            "description": "Số hợp đồng",
+            "example": "HD-2024-001"
+          },
+          "signedDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Ngày ký hợp đồng",
+            "nullable": true
+          },
+          "files": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Danh sách đường dẫn file hợp đồng",
+            "default": []
+          },
+          "terms": {
+            "type": "string",
+            "description": "Điều khoản hợp đồng",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": ["draft", "signed", "cancelled"],
+            "description": "Trạng thái hợp đồng",
+            "default": "draft"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Ngày tạo"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Ngày cập nhật"
+          }
+        },
+        "required": ["order", "contractNo"]
+      }
     }
   }
 }
+
