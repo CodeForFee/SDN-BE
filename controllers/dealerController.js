@@ -17,18 +17,40 @@ exports.getDealers = async (req, res) => {
 
 exports.createDealer = async (req, res) => {
   try {
-    const { name, location, contactInfo, salesTarget, debt } = req.body;
+    const { name, address, region, contact, salesTarget, code, creditLimit } = req.body;
 
-    if (!name || !location || !contactInfo || !salesTarget) {
-      return res.status(400).json({ message: "Lack of information" });
+    if (!name || !address) {
+      return res.status(400).json({ message: "Name and address are required" });
+    }
+
+    // Generate code if not provided
+    let dealerCode = code;
+    if (!dealerCode) {
+      // Auto-generate code from name (first 3 letters + number)
+      const namePrefix = name.substring(0, 3).toUpperCase().replace(/\s/g, '');
+      const existingDealers = await Dealer.find({ code: new RegExp(`^${namePrefix}`) });
+      dealerCode = `${namePrefix}${String(existingDealers.length + 1).padStart(3, '0')}`;
+    }
+
+    // Convert contact object to contacts array
+    const contacts = [];
+    if (contact && (contact.phone || contact.email)) {
+      contacts.push({
+        name: contact.name || 'Manager',
+        phone: contact.phone || '',
+        email: contact.email || '',
+      });
     }
 
     const newDealer = {
       name,
-      location,
-      contactInfo,
-      salesTarget,
-      debt: debt || 0,
+      code: dealerCode,
+      address,
+      region: region || '',
+      contacts: contacts.length > 0 ? contacts : [],
+      salesTarget: salesTarget || 0,
+      creditLimit: creditLimit || 0,
+      status: 'active',
     };
 
     const createDealer = await Dealer.create(newDealer);
@@ -55,7 +77,7 @@ exports.getDealerById = async (req, res) => {
 exports.updateDealer = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, location, contactInfo, salesTarget, debt } = req.body;
+    const { name, address, region, contact, salesTarget, creditLimit, status } = req.body;
 
     // Kiểm tra dealer có tồn tại không
     const dealer = await Dealer.findById(id);
@@ -63,10 +85,43 @@ exports.updateDealer = async (req, res) => {
       return res.status(404).json({ message: "Dealer not found" });
     }
 
+    // Build update object
+    const updateData = {};
+    if (name !== undefined) updateData.name = name;
+    if (address !== undefined) updateData.address = address;
+    if (region !== undefined) updateData.region = region;
+    if (salesTarget !== undefined) updateData.salesTarget = salesTarget;
+    if (creditLimit !== undefined) updateData.creditLimit = creditLimit;
+    if (status !== undefined) updateData.status = status;
+
+    // Handle contacts array - if contact object is provided, update or create first contact
+    if (contact !== undefined) {
+      const contacts = dealer.contacts || [];
+      if (contact.phone || contact.email) {
+        if (contacts.length > 0) {
+          // Update first contact
+          contacts[0] = {
+            name: contact.name || contacts[0].name || 'Manager',
+            phone: contact.phone || contacts[0].phone || '',
+            email: contact.email || contacts[0].email || '',
+          };
+        } else {
+          // Create first contact
+          contacts.push({
+            name: contact.name || 'Manager',
+            phone: contact.phone || '',
+            email: contact.email || '',
+          });
+        }
+        updateData.contacts = contacts;
+      }
+      // If contact is empty and no existing contacts, keep empty array (don't update)
+    }
+
     // Cập nhật thông tin
     const updatedDealer = await Dealer.findByIdAndUpdate(
       id,
-      { name, location, contactInfo, salesTarget, debt },
+      updateData,
       { new: true, runValidators: true }
     );
 
