@@ -26,55 +26,77 @@ const getInventory = asyncHandler(async (req, res) => {
 });
 
 const createInventory = asyncHandler(async (req, res) => {
-  const { variant, color, owner, ownerType, quantity } = req.body;
+  const { variant, color, owner, ownerType, quantity, location } = req.body;
 
-  if (!variant || !owner || !ownerType || quantity === undefined) {
+  // Validate required fields
+  if (!variant || !ownerType || quantity === undefined) {
     res.status(400);
     throw new Error(
-      "Vui lòng nhập đầy đủ các trường: variant, owner, ownerType, quantity."
+      "Vui lòng nhập đầy đủ các trường: variant, ownerType, quantity."
+    );
+  }
+
+  // If ownerType is 'Dealer', owner is required
+  if (ownerType === 'Dealer' && !owner) {
+    res.status(400);
+    throw new Error(
+      "Vui lòng chọn đại lý khi ownerType là 'Dealer'."
     );
   }
 
   const variantExists = await VehicleVariant.findById(variant);
-  const dealerExists = await Dealer.findById(owner);
-
   if (!variantExists) {
     res.status(404);
     throw new Error("ID variant không hợp lệ hoặc không tồn tại.");
   }
 
-  if (!dealerExists) {
-    res.status(404);
-    throw new Error("ID đại lý không hợp lệ hoặc không tồn tại.");
+  // Only validate Dealer if ownerType is 'Dealer' and owner is provided
+  if (ownerType === 'Dealer' && owner) {
+    const dealerExists = await Dealer.findById(owner);
+    if (!dealerExists) {
+      res.status(404);
+      throw new Error("ID đại lý không hợp lệ hoặc không tồn tại.");
+    }
   }
 
-  const existingInventory = await Inventory.findOne({ variant, color, owner, ownerType });
+  // For EVM inventory, owner can be null or empty string
+  const ownerToUse = ownerType === 'EVM' ? null : owner;
+
+  const existingInventory = await Inventory.findOne({ 
+    variant, 
+    color: color || null, 
+    owner: ownerToUse, 
+    ownerType 
+  });
 
   if (existingInventory) {
     res.status(400);
     throw new Error(
-      "Mục tồn kho cho xe này tại đại lý này đã tồn tại. Hãy sử dụng PUT để cập nhật."
+      "Mục tồn kho cho xe này đã tồn tại. Hãy sử dụng PUT để cập nhật."
     );
   }
 
   const newInventory = await Inventory.create({
     variant,
-    color,
-    owner,
+    color: color || undefined,
+    owner: ownerToUse,
     ownerType,
     quantity,
+    location: location || undefined,
   });
 
   res.status(201).json(newInventory);
 });
 
 const updateInventory = asyncHandler(async (req, res) => {
-  const { quantity } = req.body;
+  const { quantity, location } = req.body;
   const { id } = req.params;
 
-  if (quantity === undefined) {
+  // Only allow updating quantity and location
+  // Variant, color, owner, ownerType are immutable (identifiers)
+  if (quantity === undefined && location === undefined) {
     res.status(400);
-    throw new Error("Vui lòng cung cấp 'quantity' để cập nhật.");
+    throw new Error("Vui lòng cung cấp ít nhất một trường để cập nhật (quantity hoặc location).");
   }
 
   const inventoryItem = await Inventory.findById(id);
@@ -84,9 +106,18 @@ const updateInventory = asyncHandler(async (req, res) => {
     throw new Error(`Không tìm thấy mục tồn kho với ID: ${id}`);
   }
 
+  // Build update object - only allow quantity and location
+  const updateData = {};
+  if (quantity !== undefined) {
+    updateData.quantity = quantity;
+  }
+  if (location !== undefined) {
+    updateData.location = location;
+  }
+
   const updatedInventory = await Inventory.findByIdAndUpdate(
     id,
-    { quantity },
+    updateData,
     { new: true, runValidators: true }
   )
     .populate("variant", "trim msrp")

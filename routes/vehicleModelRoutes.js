@@ -5,9 +5,10 @@ const { allowRoles } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
-// Chỉ EVM Staff & Admin được quản lý vehicle models (không có Dealer Staff/Manager)
-router.get('/', protect, allowRoles('EVMStaff', 'Admin'), vehicleModelController.list);
-router.get('/:id', protect, allowRoles('EVMStaff', 'Admin'), vehicleModelController.get);
+// Read: DealerStaff/Manager cần xem models để tạo quote/order, EVMStaff & Admin quản lý
+router.get('/', protect, allowRoles('DealerStaff', 'DealerManager', 'EVMStaff', 'Admin'), vehicleModelController.list);
+router.get('/:id', protect, allowRoles('DealerStaff', 'DealerManager', 'EVMStaff', 'Admin'), vehicleModelController.get);
+// Create/Update/Delete: Chỉ EVMStaff & Admin
 router.post('/', protect, allowRoles('EVMStaff', 'Admin'), vehicleModelController.create);
 router.patch('/:id', protect, allowRoles('EVMStaff', 'Admin'), vehicleModelController.update);
 router.delete('/:id', protect, allowRoles('Admin'), vehicleModelController.remove);

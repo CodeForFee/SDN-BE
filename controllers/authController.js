@@ -10,26 +10,22 @@ const tokenBlacklist = new Set();
 exports.register = async (req, res) => {
   try {
     const { email, password, role, profile, dealer } = req.body;
-
     // Validate required fields
     if (!email || !password || !role) {
       return res.status(400).json({ message: "Email, password, and role are required" });
     }
-
     // Check if user is Admin or DealerManager
     if (!req.user || (req.user.role !== "Admin" && req.user.role !== "DealerManager")) {
       return res
         .status(403)
         .json({ message: "Only Admin and DealerManager can register new users" });
     }
-
     // DealerManager can only create DealerStaff
     if (req.user.role === "DealerManager" && role !== "DealerStaff") {
       return res.status(403).json({ 
         message: "DealerManager can only create DealerStaff accounts" 
       });
     }
-
     if (!ROLES.includes(role)) {
       return res.status(400).json({ message: "Invalid role" });
     }
@@ -100,6 +96,86 @@ exports.login = async (req, res) => {
 // @desc Get current user profile
 exports.me = async (req, res) => {
   res.json(req.user);
+};
+
+// @desc Update current user profile
+exports.updateProfile = async (req, res) => {
+  try {
+    const { profile } = req.body;
+    const userId = req.user._id;
+
+    if (!profile) {
+      return res.status(400).json({ message: "Profile information is required" });
+    }
+
+    const updateData = {};
+    if (profile.name !== undefined) {
+      updateData["profile.name"] = profile.name;
+    }
+    if (profile.phone !== undefined) {
+      updateData["profile.phone"] = profile.phone;
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ message: "No valid profile fields to update" });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    ).select("-passwordHash");
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({
+      message: "Profile updated successfully",
+      user: updatedUser,
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// @desc Change password
+exports.changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user._id;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: "Current password and new password are required" });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: "New password must be at least 6 characters long" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Verify current password
+    const isMatch = await user.comparePassword(currentPassword);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Current password is incorrect" });
+    }
+
+    // Hash new password
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+
+    // Update password
+    await User.findByIdAndUpdate(userId, { passwordHash });
+
+    res.status(200).json({
+      message: "Password changed successfully",
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 };
 
 // @desc Logout

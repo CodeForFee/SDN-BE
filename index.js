@@ -73,6 +73,9 @@ const deliveryRoutes = require("./routes/deliveryRoutes");
 const feedbackRoutes = require("./routes/feedbackRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 const userRoutes = require("./routes/userRoutes");
+const vehicleRequestRoutes = require("./routes/vehicleRequestRoutes");
+const installmentPlanRoutes = require("./routes/installmentPlanRoutes");
+const dealerContractRoutes = require("./routes/dealerContractRoutes");
 
 // Use Routes
 app.use("/api/auth", authRoutes);
@@ -93,6 +96,9 @@ app.use("/api/deliveries", deliveryRoutes);
 app.use("/api/feedbacks", feedbackRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/vehicle-requests", vehicleRequestRoutes);
+app.use("/api/installment-plans", installmentPlanRoutes);
+app.use("/api/dealer-contracts", dealerContractRoutes);
 
 // Health check endpoint for Render
 app.get('/health', (req, res) => {

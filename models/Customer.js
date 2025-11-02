@@ -11,6 +11,8 @@ const CustomerSchema = new mongoose.Schema(
     notes: String,
     ownerDealer: { type: mongoose.Schema.Types.ObjectId, ref: 'Dealer' },
     ownerUser: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    // Debt sẽ được tính dynamic, không lưu trong schema
+    // Có thể thêm field này nếu cần cache, nhưng nên tính toán real-time từ orders và payments
   },
   { timestamps: true }
 );

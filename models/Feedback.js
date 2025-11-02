@@ -7,6 +7,18 @@ const FeedbackSchema = new mongoose.Schema(
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     content: { type: String, required: true },
     status: { type: String, enum: ['new', 'in_progress', 'resolved'], default: 'new' },
+    forwardedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // Dealer Manager
+    forwardedAt: { type: Date },
+    forwardedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    forwardedNote: String,
+    logs: [
+      {
+        at: Date,
+        by: String,
+        action: String,
+        note: String,
+      }
+    ],
   },
   { timestamps: true }
 );

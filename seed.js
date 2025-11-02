@@ -126,6 +126,20 @@ const seed = async () => {
         dealer: dealers[2]._id,
         profile: { name: "Da Nang Dealer Manager" },
       },
+      {
+        email: "staff2@evm.com",
+        passwordHash,
+        role: "DealerStaff",
+        dealer: dealers[1]._id,
+        profile: { name: "HCM Dealer Staff 1" },
+      },
+      {
+        email: "staff3@evm.com",
+        passwordHash,
+        role: "DealerStaff",
+        dealer: dealers[2]._id,
+        profile: { name: "Da Nang Dealer Staff 1" },
+      },
     ];
 
     const users = await User.insertMany(userData);
@@ -138,7 +152,6 @@ const seed = async () => {
       { fullName: "Pham Thi D", email: "phamthid@gmail.com", phone: "0904567890", address: "Hanoi", notes: "Prefer installment payment" },
       { fullName: "Hoang Van E", email: "hoangvane@gmail.com", phone: "0905678901", address: "Ho Chi Minh", notes: "Need delivery by next month" },
     ]);
-
     // Seed Vehicle Models
     const vehicleModels = await VehicleModel.insertMany([
       {
@@ -417,14 +430,14 @@ const seed = async () => {
     console.log(`   - Deliveries: ${deliveries.length}`);
     console.log(`   - Feedbacks: ${feedbacks.length}`);
     console.log(`\n🔑 Test Accounts:`);
-    console.log(`   Admin: admin@evms.com / 123456`);
+    console.log(`   Admin: admin@evm.com / 123456`);
     console.log(`   EVM Staff: evm@evm.com / 123456`);
-    console.log(`   Hanoi Manager: manager1@evm.com / 123456`);
+    console.log(`   Hanoi Manager: manager@evm.com / 123456`);
     console.log(`   Hanoi Staff: staff1@evm.com / 123456`);
     console.log(`   HCM Manager: manager1@evm.com / 123456`);
-    console.log(`   HCM Staff: staff1@evm.com / 123456`);
-    console.log(`   Da Nang Manager: manager1@evm.com / 123456`);
-    console.log(`   Da Nang Staff: staff1@evm.com / 123456`);
+    console.log(`   HCM Staff: staff2@evm.com / 123456`);
+    console.log(`   Da Nang Manager: danang.manager@evdealer.com / 123456`);
+    console.log(`   Da Nang Staff: staff3@evm.com / 123456`);
     
     process.exit();
   } catch (err) {

@@ -4,8 +4,10 @@ const dashboardController = require('../controllers/dashboardController');
 const { protect } = require('../middleware/authMiddleware');
 const { allowRoles } = require('../middleware/authMiddleware');
 
+// Summary: Admin và EVMStaff xem tổng quan hệ thống
 router.get('/summary', protect, allowRoles('Admin', 'EVMStaff'), dashboardController.summary);
-router.get('/trends', protect, allowRoles('DealerManager', 'EVMStaff'), dashboardController.trends);
+// Trends: DealerManager, DealerStaff và EVMStaff có thể xem trends (DealerStaff chỉ xem của dealer mình)
+router.get('/trends', protect, allowRoles('DealerManager', 'DealerStaff', 'EVMStaff', 'Admin'), dashboardController.trends);
 
 module.exports = router;
 
