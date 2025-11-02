@@ -20,7 +20,7 @@ exports.getDealers = async (req, res) => {
 
 exports.createDealer = async (req, res) => {
   try {
-    const { name, address, region, contact, salesTarget, code, creditLimit } = req.body;
+    const { name, address, region, contacts, contact, salesTarget, code, creditLimit } = req.body;
 
     // Validation
     if (!name || !address) {
@@ -57,10 +57,20 @@ exports.createDealer = async (req, res) => {
       }
     }
 
-    // Convert contact object to contacts array
-    const contacts = [];
-    if (contact && (contact.phone || contact.email)) {
-      contacts.push({
+    // Handle contacts - support both contacts array and legacy contact object
+    let contactsArray = [];
+    if (contacts && Array.isArray(contacts)) {
+      // Filter out empty contacts and clean the data
+      contactsArray = contacts
+        .filter(c => c && (c.name || c.phone || c.email))
+        .map(c => ({
+          name: c.name || '',
+          phone: c.phone || '',
+          email: c.email || '',
+        }));
+    } else if (contact && (contact.phone || contact.email)) {
+      // Legacy support: convert single contact object to array
+      contactsArray.push({
         name: contact.name || 'Manager',
         phone: contact.phone || '',
         email: contact.email || '',
@@ -72,7 +82,7 @@ exports.createDealer = async (req, res) => {
       code: dealerCode,
       address,
       region: region || '',
-      contacts: contacts.length > 0 ? contacts : [],
+      contacts: contactsArray,
       salesTarget: salesTarget || 0,
       creditLimit: creditLimit || 0,
       status: 'active',
@@ -124,7 +134,7 @@ exports.getDealerById = async (req, res) => {
 exports.updateDealer = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, address, region, contact, salesTarget, creditLimit, status, code } = req.body;
+    const { name, address, region, contacts, contact, salesTarget, creditLimit, status, code } = req.body;
 
     // Kiểm tra dealer có tồn tại không
     const dealer = await Dealer.findById(id);
@@ -156,26 +166,39 @@ exports.updateDealer = async (req, res) => {
     if (creditLimit !== undefined) updateData.creditLimit = creditLimit;
     if (status !== undefined) updateData.status = status;
 
-    // Handle contacts array - if contact object is provided, update or create first contact
-    if (contact !== undefined) {
-      const contacts = [...(dealer.contacts || [])];
+    // Handle contacts - support both contacts array and legacy contact object
+    if (contacts !== undefined) {
+      if (Array.isArray(contacts)) {
+        // Filter out empty contacts and clean the data
+        const contactsArray = contacts
+          .filter(c => c && (c.name || c.phone || c.email))
+          .map(c => ({
+            name: c.name || '',
+            phone: c.phone || '',
+            email: c.email || '',
+          }));
+        updateData.contacts = contactsArray;
+      }
+    } else if (contact !== undefined) {
+      // Legacy support: if contact object is provided, update or create first contact
+      const contactsList = [...(dealer.contacts || [])];
       if (contact.phone || contact.email || contact.name) {
-        if (contacts.length > 0) {
+        if (contactsList.length > 0) {
           // Update first contact
-          contacts[0] = {
-            name: contact.name !== undefined ? contact.name : (contacts[0].name || 'Manager'),
-            phone: contact.phone !== undefined ? contact.phone : (contacts[0].phone || ''),
-            email: contact.email !== undefined ? contact.email : (contacts[0].email || ''),
+          contactsList[0] = {
+            name: contact.name !== undefined ? contact.name : (contactsList[0].name || 'Manager'),
+            phone: contact.phone !== undefined ? contact.phone : (contactsList[0].phone || ''),
+            email: contact.email !== undefined ? contact.email : (contactsList[0].email || ''),
           };
         } else {
           // Create first contact
-          contacts.push({
+          contactsList.push({
             name: contact.name || 'Manager',
             phone: contact.phone || '',
             email: contact.email || '',
           });
         }
-        updateData.contacts = contacts;
+        updateData.contacts = contactsList;
       }
     }
 
