@@ -10,6 +10,7 @@ const VehicleVariantSchema = new mongoose.Schema(
     features: [String],
     msrp: { type: Number, required: true },
     images: [String],
+    colors: [{ type: mongoose.Schema.Types.ObjectId, ref: 'VehicleColor' }],
     active: { type: Boolean, default: true },
   },
   { timestamps: true }

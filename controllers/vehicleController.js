@@ -4,7 +4,9 @@ const VehicleColor = require('../models/VehicleColor');
 
 exports.getVehicles = async (req, res) => { 
     try{ 
-        const variants = await VehicleVariant.find().populate('model'); 
+        const variants = await VehicleVariant.find()
+            .populate('model')
+            .populate('colors', 'name code hex extraPrice active'); 
         
         res.status(200).json({ 
             success: true, 
@@ -22,7 +24,9 @@ exports.getVehicleById = async(req, res) => {
 
         if(!id) return res.status(400).json({message: "Lack of information"});
 
-        const variant = await VehicleVariant.findById(id).populate('model'); 
+        const variant = await VehicleVariant.findById(id)
+            .populate('model')
+            .populate('colors', 'name code hex extraPrice active'); 
         
         if(!variant) return res.status(404).json({ message: "Vehicle variant not found"}); 
         
@@ -37,7 +41,7 @@ exports.getVehicleById = async(req, res) => {
 
 exports.createVehicle = async (req, res) => { 
     try{ 
-        const {model, trim, battery, range, motorPower, features, msrp, images, active} = req.body; 
+        const {model, trim, battery, range, motorPower, features, msrp, images, colors, active} = req.body; 
         
         if (!model || !trim || !msrp) return res.status(400).json({message: "Lack of information"}); 
         
@@ -50,14 +54,19 @@ exports.createVehicle = async (req, res) => {
             features: features,
             msrp: msrp,
             images: images,
+            colors: colors || [],
             active: active
         } 
         
         const createVariant = await VehicleVariant.create(newVariant); 
         
+        const populatedVariant = await VehicleVariant.findById(createVariant._id)
+            .populate('model')
+            .populate('colors', 'name code hex extraPrice active');
+        
         res.status(201).json({ 
             message: "Create new vehicle variant successfully", 
-            data: createVariant 
+            data: populatedVariant 
         }) 
     } catch (error){
          res.status(500).json({ message: error.message}); 
@@ -66,9 +75,9 @@ exports.createVehicle = async (req, res) => {
     
 exports.updateVehicle = async (req, res) => { 
     try{ 
-        const {id} = req.params; 
+        const {id} = req.params;
 
-        const {model, trim, battery, range, motorPower, features, msrp, images, active} = req.body; 
+        const {model, trim, battery, range, motorPower, features, msrp, images, colors, active} = req.body; 
         
         if(!id) return res.status(400).json({ message: "Lack of information"}); 
         
@@ -82,9 +91,16 @@ exports.updateVehicle = async (req, res) => {
             msrp,
             images,
             active
-        } 
+        };
+        
+        // Only update colors if provided
+        if (colors !== undefined) {
+            variantData.colors = colors;
+        }
             
-        const updateVariant = await VehicleVariant.findByIdAndUpdate(id, variantData, {new: true}); 
+        const updateVariant = await VehicleVariant.findByIdAndUpdate(id, variantData, {new: true})
+            .populate('model')
+            .populate('colors', 'name code hex extraPrice active'); 
         
         if(!updateVariant){ 
             return res.status(404).json({message: "Vehicle variant not found"}); 
@@ -97,7 +113,7 @@ exports.updateVehicle = async (req, res) => {
     } catch (error){ 
         res.status(500).json({message: error.message}); 
     } 
-}; 
+};
 
 exports.deleteVehicle = async (req, res) => { 
     try{ 
@@ -143,6 +159,7 @@ exports.compareVehicles = async (req, res) => {
     // Find all variants
     const variants = await VehicleVariant.find({ _id: { $in: idList } })
       .populate('model')
+      .populate('colors', 'name code hex extraPrice active')
       .sort({ 'model.name': 1, trim: 1 });
     
     if (variants.length !== idList.length) {
@@ -176,6 +193,7 @@ exports.compareVehicles = async (req, res) => {
         features: variant.features || [],
         msrp: variant.msrp,
         images: variant.images || [],
+        colors: variant.colors || [],
         active: variant.active,
         createdAt: variant.createdAt,
         updatedAt: variant.updatedAt
