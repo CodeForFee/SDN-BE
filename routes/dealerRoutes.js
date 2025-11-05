@@ -1,15 +1,28 @@
 const express = require('express');
-const Dealer = require('../models/Dealer');
-const createCrudController = require('../controllers/crudController');
+const dealerController = require('../controllers/dealerController');
+const { protect } = require('../middleware/authMiddleware');
+const { allowRoles } = require('../middleware/authMiddleware');
 
 const router = express.Router();
-const ctrl = createCrudController(Dealer);
 
-router.get('/', ctrl.list);
-router.get('/:id', ctrl.get);
-router.post('/', ctrl.create);
-router.patch('/:id', ctrl.update);
-router.delete('/:id', ctrl.remove);
+// Dealer Manager, EVM Staff & Admin có thể xem đại lý
+router.get('/', protect, allowRoles('DealerManager', 'EVMStaff', 'Admin', 'DealerStaff'), dealerController.getDealers);
+router.get('/:id', protect, allowRoles('DealerManager', 'EVMStaff', 'Admin', 'DealerStaff'), dealerController.getDealerById);
+
+// Chỉ Admin tạo mới đại lý
+router.post('/', protect, allowRoles('Admin'), dealerController.createDealer);
+
+// Dealer Manager có thể cập nhật thông tin đại lý của mình, Admin có thể cập nhật tất cả
+router.patch('/:id', protect, allowRoles('DealerManager', 'Admin'), dealerController.updateDealer);
+
+// Chỉ Admin xóa đại lý
+router.delete('/:id', protect, allowRoles('Admin'), dealerController.deleteDealer);
+
+// Dealer inventory view
+router.get('/:id/inventory', protect, allowRoles('DealerManager', 'EVMStaff'), dealerController.getDealerInventory);
+
+// Update sales target
+router.put('/:id/target', protect, allowRoles('Admin', 'EVMStaff'), dealerController.updateDealerTarget);
 
 module.exports = router;
 

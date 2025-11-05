@@ -1,15 +1,17 @@
 const express = require('express');
-const Customer = require('../models/Customer');
-const createCrudController = require('../controllers/crudController');
+const customerController = require('../controllers/customerController');
+const { protect } = require('../middleware/authMiddleware');
+const { allowRoles } = require('../middleware/authMiddleware');
 
 const router = express.Router();
-const ctrl = createCrudController(Customer);
 
-router.get('/', ctrl.list);
-router.get('/:id', ctrl.get);
-router.post('/', ctrl.create);
-router.patch('/:id', ctrl.update);
-router.delete('/:id', ctrl.remove);
+// Dealer Staff, Dealer Manager có thể quản lý khách hàng của đại lý
+router.get('/', protect, allowRoles('DealerStaff', 'DealerManager', 'Admin'), customerController.getCustomers);
+router.get('/:id/debt', protect, allowRoles('DealerStaff', 'DealerManager', 'EVMStaff', 'Admin'), customerController.getCustomerDebt);
+router.get('/:id', protect, allowRoles('DealerStaff', 'DealerManager', 'Admin'), customerController.getCustomerById);
+router.post('/', protect, allowRoles('DealerStaff', 'DealerManager', 'Admin'), customerController.createCustomer);
+router.patch('/:id', protect, allowRoles('DealerStaff', 'DealerManager', 'Admin'), customerController.updateCustomer);
+router.delete('/:id', protect, allowRoles('Admin'), customerController.deleteCustomer);
 
 module.exports = router;
 

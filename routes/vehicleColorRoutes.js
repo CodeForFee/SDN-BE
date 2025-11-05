@@ -1,17 +1,17 @@
 const express = require('express');
-const VehicleColor = require('../models/VehicleColor');
-const createCrudController = require('../controllers/crudController');
+const vehicleColorController = require('../controllers/vehicleColorController');
 const { protect } = require('../middleware/authMiddleware');
-const { allowRoles } = require('../middleware/roles');
+const { allowRoles } = require('../middleware/authMiddleware');
 
 const router = express.Router();
-const ctrl = createCrudController(VehicleColor);
 
-// Chỉ EVM Staff & Admin được quản lý vehicle colors
-router.get('/', protect, allowRoles('Dealer Staff', 'Dealer Manager', 'EVM Staff', 'Admin'), ctrl.list);
-router.get('/:id', protect, allowRoles('Dealer Staff', 'Dealer Manager', 'EVM Staff', 'Admin'), ctrl.get);
-router.post('/', protect, allowRoles('EVM Staff', 'Admin'), ctrl.create);
-router.patch('/:id', protect, allowRoles('EVM Staff', 'Admin'), ctrl.update);
-router.delete('/:id', protect, allowRoles('Admin'), ctrl.remove);
+// Read: DealerStaff/Manager cần xem colors để tạo quote/order, EVMStaff & Admin quản lý
+router.get('/', protect, allowRoles('DealerStaff', 'DealerManager', 'EVMStaff', 'Admin'), vehicleColorController.list);
+router.get('/:id', protect, allowRoles('DealerStaff', 'DealerManager', 'EVMStaff', 'Admin'), vehicleColorController.get);
+// Create/Update/Delete: Chỉ EVMStaff & Admin
+router.post('/', protect, allowRoles('EVMStaff', 'Admin'), vehicleColorController.create);
+router.patch('/:id', protect, allowRoles('EVMStaff', 'Admin'), vehicleColorController.update);
+router.delete('/:id', protect, allowRoles('Admin'), vehicleColorController.remove);
 
 module.exports = router;
+

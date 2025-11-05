@@ -1,15 +1,16 @@
 const express = require('express');
-const SalesContract = require('../models/SalesContract');
-const createCrudController = require('../controllers/crudController');
+const contractController = require('../controllers/contractController');
+const { protect } = require('../middleware/authMiddleware');
+const { allowRoles } = require('../middleware/authMiddleware');
 
 const router = express.Router();
-const ctrl = createCrudController(SalesContract);
 
-router.get('/', ctrl.list);
-router.get('/:id', ctrl.get);
-router.post('/', ctrl.create);
-router.patch('/:id', ctrl.update);
-router.delete('/:id', ctrl.remove);
+// Dealer Staff, Dealer Manager quản lý hợp đồng bán hàng
+router.get('/', protect, allowRoles('DealerStaff', 'DealerManager', 'Admin'), contractController.getContracts);
+router.get('/:id', protect, allowRoles('DealerStaff', 'DealerManager', 'Admin'), contractController.getContractById);
+router.post('/', protect, allowRoles('DealerStaff', 'DealerManager', 'Admin'), contractController.createContract);
+router.put('/:id', protect, allowRoles('DealerManager', 'Admin'), contractController.updateContract);
+router.patch('/:id', protect, allowRoles('DealerManager', 'Admin'), contractController.updateContract);
 
 module.exports = router;
 

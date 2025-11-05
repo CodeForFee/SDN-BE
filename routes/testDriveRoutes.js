@@ -1,15 +1,16 @@
 const express = require('express');
-const TestDrive = require('../models/TestDrive');
-const createCrudController = require('../controllers/crudController');
+const testDriveController = require('../controllers/testDriveController');
+const { protect } = require('../middleware/authMiddleware');
+const { allowRoles } = require('../middleware/authMiddleware');
 
 const router = express.Router();
-const ctrl = createCrudController(TestDrive);
 
-router.get('/', ctrl.list);
-router.get('/:id', ctrl.get);
-router.post('/', ctrl.create);
-router.patch('/:id', ctrl.update);
-router.delete('/:id', ctrl.remove);
+// Dealer Staff, Dealer Manager quản lý lịch lái thử
+router.get('/', protect, allowRoles('DealerStaff', 'DealerManager', 'Admin'), testDriveController.getTestDrives);
+router.get('/:id', protect, allowRoles('DealerStaff', 'DealerManager', 'Admin'), testDriveController.getTestDriveById);
+router.post('/', protect, allowRoles('DealerStaff', 'DealerManager', 'Admin'), testDriveController.createTestDrive);
+router.patch('/:id', protect, allowRoles('DealerStaff', 'DealerManager', 'Admin'), testDriveController.updateTestDrive);
+router.delete('/:id', protect, allowRoles('Admin'), testDriveController.deleteTestDrive);
 
 module.exports = router;
 

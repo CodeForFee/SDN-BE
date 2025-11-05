@@ -1,25 +1,24 @@
 const express = require('express');
-const { login, register, me } = require('../controllers/authController');
+const { login, register, me, logout, refreshToken, updateProfile, changePassword } = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
+const { allowRoles } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
 // Public routes
 router.post('/login', login);
-
 // Protected routes
-router.post('/register', protect, register);
+// Only Admin and Dealer Manager can register new users (Dealer Manager can only create DealerStaff)
+router.post('/register', protect, allowRoles('Admin', 'DealerManager'), register);
 router.get('/me', protect, me);
+router.put('/profile', protect, updateProfile);
+router.put('/password', protect, changePassword);
 
 // Logout (client-side token removal)
-router.post('/logout', (req, res) => {
-  res.json({ success: true, message: 'Logout successful' });
-});
+router.post('/logout', protect, logout);
 
-// Token refresh (placeholder)
-router.post('/refresh', (req, res) => {
-  res.json({ success: true, message: 'Token refresh - implement if needed' });
-});
+// Token refresh
+router.post('/refresh', refreshToken);
 
 module.exports = router;
 
