@@ -1,0 +1,46 @@
+# .github/workflows/deploy.yml
+name: Auto Deploy to Production VPS
+
+on:
+  push:
+    branches:
+      - main # Kích hoạt khi có code được push lên branch 'main'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest # Chạy trên máy ảo GitHub
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        
+      # Bước Triển khai (Continuous Deployment)
+      - name: Deploy to Production Server via SSH
+        uses: appleboy/ssh-action@master # Sử dụng action phổ biến để kết nối SSH
+        with:
+          # THAY THẾ bằng địa chỉ IP của VPS bạn
+          host: ${{ secrets.SSH_HOST }}      
+          # User mà bạn đã tạo SSH key ở bước trước (chúng ta dùng root)
+          username: ${{ secrets.SSH_USER }}               
+          # Lấy khóa SSH Private Key đã lưu trong GitHub Secrets
+          key: ${{ secrets.SSH_PRIVATE_KEY }} 
+          
+          # Các lệnh sẽ được chạy trên VPS của bạn
+          script: |
+            echo "Starting deployment on VPS..."
+            
+            # 1. Di chuyển tới thư mục dự án Node.js
+            cd /var/www/sdn-be
+            
+            # 2. Kéo code mới nhất từ Git (main branch)
+            git pull origin main
+            
+            # 3. Cài đặt/cập nhật dependencies (nếu có thay đổi trong package.json)
+            npm install
+            
+            # 4. Khởi động lại ứng dụng bằng PM2 để nạp code mới
+            pm2 restart My_Node_API
+            
+            echo "Deployment finished. Checking PM2 logs..."
+            # 5. Kiểm tra log sau khi khởi động lại (để debug)
+            pm2 logs My_Node_API --lines 10
