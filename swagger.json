@@ -3,7 +3,7 @@
   "info": {
     "title": "EVM Dealer Management API",
     "version": "1.0.0",
-    "description": "Electric Vehicle Dealer Management System"
+    "description": "EVDMS SYSTEMS"
   },
   "servers": [
     { "url": "http://localhost:5000", "description": "Development server" },
