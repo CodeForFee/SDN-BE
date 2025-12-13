@@ -5,7 +5,7 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch: # Cho phép chạy thủ công qua giao diện GitHub
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -23,11 +23,8 @@ jobs:
           script: |
             echo "Starting deployment on VPS..."
             
-            # Định nghĩa các biến môi trường
             DEPLOY_DIR=/var/www/sdn-be
             APP_NAME="My_Node_API"
-            
-            # Khắc phục lỗi PM2: Sử dụng đường dẫn tuyệt đối đã tìm được
             PM2_PATH="/usr/local/bin/pm2" 
 
             cd $DEPLOY_DIR
@@ -35,24 +32,19 @@ jobs:
             # 1. Kéo code mới nhất từ Git
             git pull origin main
 
-            # 2. Cài đặt dependencies (chỉ production)
-            # Dùng --omit=dev là cú pháp mới thay cho --production
+            # 2. Cài đặt dependencies
             npm install --omit=dev 
 
-            # 3. Khởi động lại ứng dụng (Zero-Downtime)
-            # Kiểm tra PM2 list bằng đường dẫn chính xác
+            # 3. Khởi động lại ứng dụng
             if $PM2_PATH list | grep -q $APP_NAME; then
-                # Dùng reload để không gián đoạn, cập nhật env
                 $PM2_PATH reload $APP_NAME --update-env 
             else
-                # Nếu chưa chạy (lần đầu), dùng start
                 $PM2_PATH start index.js --name $APP_NAME --update-env 
             fi
             
-            # 4. Lưu trạng thái PM2 và Log
-            echo "Deployment finished. Checking PM2 logs..."
-            $PM2_PATH logs $APP_NAME --lines 10
+            # 4. Lưu trạng thái PM2 và KHÔNG DÙNG pm2 logs
+            echo "Deployment finished and service restarted successfully."
             $PM2_PATH save
             
-            # 5. BUỘC PHIÊN SSH PHẢI KẾT THÚC (Khắc phục lỗi treo Runner)
+            # 🔥 BUỘC PHIÊN SSH PHẢI KẾT THÚC
             exit
