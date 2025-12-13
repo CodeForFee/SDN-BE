@@ -5,29 +5,15 @@ on:
   push:
     branches:
       - main
-  # 1. Thêm workflow_dispatch để có thể chạy thủ công (Manual Deploy)
-  workflow_dispatch:
+  workflow_dispatch: # Cho phép chạy thủ công
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout Repository Code
         uses: actions/checkout@v4
         
-      # 2. Bước: Kiểm tra/Dọn dẹp Cache NPM trước khi Deploy
-      # Điều này giúp cải thiện độ tin cậy của npm install
-      - name: Cache Node Modules
-        uses: actions/cache@v4
-        id: npm-cache
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-
-      # 3. Bước Triển khai (Continuous Deployment)
       - name: Deploy and Restart Service via SSH
         uses: appleboy/ssh-action@master
         with:
@@ -36,8 +22,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             echo "Starting deployment on VPS..."
-
-            # 4. Sử dụng reload thay vì restart (Zero-downtime)
+            
             DEPLOY_DIR=/var/www/sdn-be
             APP_NAME="My_Node_API"
 
@@ -46,18 +31,19 @@ jobs:
             # Kéo code mới nhất từ Git
             git pull origin main
 
-            # Cài đặt/cập nhật dependencies
-            npm install --production # 5. Chỉ cài đặt dependencies production
+            # Cài đặt dependencies (chỉ production)
+            npm install --production 
 
-            # 6. Kiểm tra lại PM2 có chạy không trước khi reload
+            # Dùng reload để zero-downtime, dùng start nếu chưa chạy
             if /usr/bin/pm2 list | grep -q $APP_NAME; then
-                # Dùng reload để không downtime (nếu hỗ trợ)
                 pm2 reload $APP_NAME --update-env 
             else
-                # Nếu chưa chạy (lần đầu), dùng start
                 pm2 start index.js --name $APP_NAME --update-env 
             fi
             
             echo "Deployment finished. Checking PM2 logs..."
             pm2 logs $APP_NAME --lines 10
-            pm2 save # 7. Lưu lại trạng thái PM2 sau khi thay đổi
+            pm2 save
+            
+            # 🔥 BUỘC PHIÊN SSH PHẢI KẾT THÚC
+            exit
