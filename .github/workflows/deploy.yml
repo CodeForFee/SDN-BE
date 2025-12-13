@@ -5,7 +5,7 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch: # Cho phép chạy thủ công
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -25,6 +25,9 @@ jobs:
             
             DEPLOY_DIR=/var/www/sdn-be
             APP_NAME="My_Node_API"
+            
+            # ĐƯỜNG DẪN PM2 ĐÃ SỬA CHỮA
+            PM2_PATH="/usr/local/bin/pm2" 
 
             cd $DEPLOY_DIR
 
@@ -32,18 +35,18 @@ jobs:
             git pull origin main
 
             # Cài đặt dependencies (chỉ production)
-            npm install --production 
+            npm install --omit=dev 
 
             # Dùng reload để zero-downtime, dùng start nếu chưa chạy
-            if /usr/bin/pm2 list | grep -q $APP_NAME; then
-                pm2 reload $APP_NAME --update-env 
+            if $PM2_PATH list | grep -q $APP_NAME; then
+                $PM2_PATH reload $APP_NAME --update-env 
             else
-                pm2 start index.js --name $APP_NAME --update-env 
+                $PM2_PATH start index.js --name $APP_NAME --update-env 
             fi
             
             echo "Deployment finished. Checking PM2 logs..."
-            pm2 logs $APP_NAME --lines 10
-            pm2 save
+            $PM2_PATH logs $APP_NAME --lines 10
+            $PM2_PATH save
             
-            # 🔥 BUỘC PHIÊN SSH PHẢI KẾT THÚC
+            # BUỘC PHIÊN SSH PHẢI KẾT THÚC
             exit
